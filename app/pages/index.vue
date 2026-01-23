@@ -1,7 +1,9 @@
 <script setup lang="ts">
-
+definePageMeta({
+  layout: false,
+});
 </script>
 
 <template>
-    <h1>home page</h1>
+  <PlanetScene />
 </template>

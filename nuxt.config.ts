@@ -9,6 +9,7 @@ export default defineNuxtConfig({
     "@nuxt/image",
     "@nuxtjs/supabase",
     "@nuxtjs/tailwindcss",
+    "@tresjs/nuxt",
   ],
   supabase: {
     redirectOptions: {
