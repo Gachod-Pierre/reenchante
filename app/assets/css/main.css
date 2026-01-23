@@ -1,0 +1,170 @@
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply antialiased;
+  }
+
+  /* Body - Text par défaut */
+  body {
+    @apply font-nunito text-sm leading-relaxed;
+  }
+
+  @media (min-width: 768px) {
+    body {
+      @apply text-base;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    body {
+      @apply text-lg;
+    }
+  }
+
+  /* Titres - Hiérarchie responsive */
+  h1 {
+    @apply font-baloo font-bold text-2xl leading-tight mb-4;
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      @apply text-4xl;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    h1 {
+      @apply text-5xl;
+    }
+  }
+
+  h2 {
+    @apply font-baloo font-bold text-xl leading-tight mb-3;
+  }
+
+  @media (min-width: 768px) {
+    h2 {
+      @apply text-3xl;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    h2 {
+      @apply text-4xl;
+    }
+  }
+
+  h3 {
+    @apply font-baloo font-bold text-lg leading-snug mb-3;
+  }
+
+  @media (min-width: 768px) {
+    h3 {
+      @apply text-2xl;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    h3 {
+      @apply text-3xl;
+    }
+  }
+
+  h4 {
+    @apply font-baloo font-semibold text-base leading-snug mb-2;
+  }
+
+  @media (min-width: 768px) {
+    h4 {
+      @apply text-lg;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    h4 {
+      @apply text-xl;
+    }
+  }
+
+  h5 {
+    @apply font-baloo font-semibold text-base leading-snug mb-2;
+  }
+
+  @media (min-width: 768px) {
+    h5 {
+      @apply text-lg;
+    }
+  }
+
+  h6 {
+    @apply font-baloo font-semibold text-sm leading-snug mb-2;
+  }
+
+  @media (min-width: 768px) {
+    h6 {
+      @apply text-base;
+    }
+  }
+
+  /* Paragraphes et textes de base */
+  p {
+    @apply font-nunito text-sm leading-relaxed mb-3;
+  }
+
+  @media (min-width: 768px) {
+    p {
+      @apply text-base;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    p {
+      @apply text-lg;
+    }
+  }
+
+  /* Petits textes - labels, captions, helpers */
+  small {
+    @apply text-xs font-nunito;
+  }
+
+  @media (min-width: 768px) {
+    small {
+      @apply text-sm;
+    }
+  }
+
+  /* Code et monospace */
+  code,
+  pre {
+    @apply font-mono text-xs;
+  }
+
+  @media (min-width: 768px) {
+    code,
+    pre {
+      @apply text-sm;
+    }
+  }
+
+  /* Boutons */
+  button {
+    @apply font-baloo font-semibold text-sm transition-all duration-200;
+  }
+
+  @media (min-width: 768px) {
+    button {
+      @apply text-base;
+    }
+  }
+
+  /* Links */
+  a {
+    @apply font-nunito transition-colors duration-200 no-underline;
+  }
+}
