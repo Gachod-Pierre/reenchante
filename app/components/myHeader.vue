@@ -46,7 +46,6 @@ const shouldShowHeader = computed(
 
 // Fonction pour vérifier si un lien est actif
 const isLinkActive = (path: string) => {
-  console.log("Checking path:", path, "Current route:", route.path);
   return route.path === path;
 };
 </script>

@@ -8,7 +8,7 @@ const canvasRef = ref();
 let animationId: number;
 const animationStarted = ref(false);
 let camera: THREE.PerspectiveCamera | THREE.Camera | null = null;
-let raycaster: THREE.Raycaster | null = null;
+let _raycaster: THREE.Raycaster | null = null;
 
 const isDragging = ref(false);
 const isHoveringPlanet = ref(false);
@@ -24,53 +24,19 @@ const rainbowArcs = ref<
   Array<{ geometry: THREE.BufferGeometry; color: string }>
 >([]);
 
-// Fonction pour créer une texture arc-en-ciel
-const createRainbowTexture = (): THREE.CanvasTexture => {
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 128;
-  const ctx = canvas.getContext("2d")!;
-
-  const gradient = ctx.createLinearGradient(0, 0, 512, 0);
-  gradient.addColorStop(0, "#FF0000");
-  gradient.addColorStop(0.17, "#FF7F00");
-  gradient.addColorStop(0.33, "#FFFF00");
-  gradient.addColorStop(0.5, "#00FF00");
-  gradient.addColorStop(0.67, "#0000FF");
-  gradient.addColorStop(0.83, "#4B0082");
-  gradient.addColorStop(1, "#9400D3");
-
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 512, 128);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearFilter;
-  return texture;
-};
-
-// Fonction pour créer une géométrie d'arc en ciel
-const createRainbowGeometry = (): THREE.BufferGeometry => {
-  const geometry = new THREE.BufferGeometry();
-  const points: THREE.Vector3[] = [];
-
-  // Créer une courbe d'arc classique moins prononcée
-  const segments = 64;
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments;
-    const angle = t * Math.PI; // 0 à 180 degrés
-    const x = (t - 0.5) * 40; // De -20 à 20
-    const y = Math.sin(angle) * 6; // Hauteur maximale de 6 (moins haut)
-    const z = -12;
-    points.push(new THREE.Vector3(x, y, z));
-  }
-
-  // Créer une courbe Catmull-Rom
-  const curve = new THREE.CatmullRomCurve3(points);
-  const tubeGeometry = new THREE.TubeGeometry(curve, 64, 0.5, 8, false);
-
-  return tubeGeometry;
-};
+// Computed style pour le canvas - évite les hydration mismatches
+const canvasStyle = computed(() => ({
+  width: "100%",
+  height: "100vh",
+  backgroundColor: "#f4f4f4",
+  backgroundImage:
+    "linear-gradient(rgba(180, 180, 180, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(180, 180, 180, 0.2) 1px, transparent 1px)",
+  backgroundSize: "60px 60px",
+  userSelect: "none" as const,
+  zIndex: 0,
+  overflow: "hidden",
+  cursor: isHoveringPlanet.value ? "grab" : "default",
+}));
 
 // Fonction pour créer plusieurs arcs en ciel avec des couleurs distinctes
 const createRainbowArcs = (): Array<{
@@ -154,6 +120,12 @@ const generateClouds = (): Cloud[] => {
     "octahedron",
   ];
 
+  const getGeometry = (
+    seed: number,
+  ): "icosahedron" | "dodecahedron" | "octahedron" => {
+    return geometries[seed % geometries.length]!;
+  };
+
   // COUCHE 1: Très loin (Z: -25 à -20)
   const layer1X = [-28, -20, -12, -4, 4, 12, 20, 28];
   for (let i = 0; i < layer1X.length; i++) {
@@ -161,9 +133,10 @@ const generateClouds = (): Cloud[] => {
     const xVariation = seededRandom(baseSeed) * 4 - 2;
     const yVariation = seededRandom(baseSeed + 1) * 1 - 0.5;
     const zVariation = seededRandom(baseSeed + 2) * 2;
+    const x = layer1X[i]!;
 
     clouds.push({
-      position: [layer1X[i] + xVariation, -2.5 + yVariation, -24 + zVariation],
+      position: [x + xVariation, -2.5 + yVariation, -24 + zVariation],
       rotation: [
         seededRandom(baseSeed + 3) * Math.PI,
         seededRandom(baseSeed + 4) * Math.PI,
@@ -171,7 +144,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.75 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.35 + seededRandom(baseSeed + 7) * 0.1,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -191,7 +164,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.7 + seededRandom(baseSeed + 6) * 0.25,
       opacity: 0.32 + seededRandom(baseSeed + 7) * 0.12,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -211,7 +184,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.75 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.33 + seededRandom(baseSeed + 7) * 0.1,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -222,9 +195,10 @@ const generateClouds = (): Cloud[] => {
     const xVariation = seededRandom(baseSeed) * 4 - 2;
     const yVariation = seededRandom(baseSeed + 1) * 1 - 0.5;
     const zVariation = seededRandom(baseSeed + 2) * 1.5;
+    const x = layer2X[i]!;
 
     clouds.push({
-      position: [layer2X[i] + xVariation, -2.6 + yVariation, -18 + zVariation],
+      position: [x + xVariation, -2.6 + yVariation, -18 + zVariation],
       rotation: [
         seededRandom(baseSeed + 3) * Math.PI,
         seededRandom(baseSeed + 4) * Math.PI,
@@ -232,7 +206,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.8 + seededRandom(baseSeed + 6) * 0.22,
       opacity: 0.45 + seededRandom(baseSeed + 7) * 0.12,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -252,7 +226,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.75 + seededRandom(baseSeed + 6) * 0.25,
       opacity: 0.43 + seededRandom(baseSeed + 7) * 0.12,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -272,7 +246,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.8 + seededRandom(baseSeed + 6) * 0.22,
       opacity: 0.44 + seededRandom(baseSeed + 7) * 0.1,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -283,9 +257,10 @@ const generateClouds = (): Cloud[] => {
     const xVariation = seededRandom(baseSeed) * 5 - 2.5;
     const yVariation = seededRandom(baseSeed + 1) * 1 - 0.5;
     const zVariation = seededRandom(baseSeed + 2) * 1.5;
+    const x = layer3X[i]!;
 
     clouds.push({
-      position: [layer3X[i] + xVariation, -2.5 + yVariation, -10 + zVariation],
+      position: [x + xVariation, -2.5 + yVariation, -10 + zVariation],
       rotation: [
         seededRandom(baseSeed + 3) * Math.PI,
         seededRandom(baseSeed + 4) * Math.PI,
@@ -293,7 +268,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.9 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.58 + seededRandom(baseSeed + 7) * 0.12,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -313,7 +288,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.85 + seededRandom(baseSeed + 6) * 0.25,
       opacity: 0.56 + seededRandom(baseSeed + 7) * 0.14,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -333,7 +308,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.9 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.55 + seededRandom(baseSeed + 7) * 0.13,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -344,9 +319,10 @@ const generateClouds = (): Cloud[] => {
     const xVariation = seededRandom(baseSeed) * 5 - 2.5;
     const yVariation = seededRandom(baseSeed + 1) * 1 - 0.5;
     const zVariation = seededRandom(baseSeed + 2) * 1.5;
+    const x = layer4X[i]!;
 
     clouds.push({
-      position: [layer4X[i] + xVariation, -2.5 + yVariation, -3 + zVariation],
+      position: [x + xVariation, -2.5 + yVariation, -3 + zVariation],
       rotation: [
         seededRandom(baseSeed + 3) * Math.PI,
         seededRandom(baseSeed + 4) * Math.PI,
@@ -354,7 +330,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 2.0 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.72 + seededRandom(baseSeed + 7) * 0.12,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -374,7 +350,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.85 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.7 + seededRandom(baseSeed + 7) * 0.14,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -394,7 +370,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.9 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.71 + seededRandom(baseSeed + 7) * 0.13,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -405,9 +381,10 @@ const generateClouds = (): Cloud[] => {
     const xVariation = seededRandom(baseSeed) * 5 - 2.5;
     const yVariation = seededRandom(baseSeed + 1) * 1 - 0.5;
     const zVariation = seededRandom(baseSeed + 2) * 1;
+    const x = layer5X[i]!;
 
     clouds.push({
-      position: [layer5X[i] + xVariation, -2.5 + yVariation, 1.5 + zVariation],
+      position: [x + xVariation, -2.5 + yVariation, 1.5 + zVariation],
       rotation: [
         seededRandom(baseSeed + 3) * Math.PI,
         seededRandom(baseSeed + 4) * Math.PI,
@@ -415,7 +392,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 2.1 + seededRandom(baseSeed + 6) * 0.18,
       opacity: 0.72 + seededRandom(baseSeed + 7) * 0.1,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -435,7 +412,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.95 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.6 + seededRandom(baseSeed + 7) * 0.1,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -446,9 +423,10 @@ const generateClouds = (): Cloud[] => {
     const xVariation = seededRandom(baseSeed) * 6 - 3;
     const yVariation = seededRandom(baseSeed + 1) * 1.5 - 0.75;
     const zVariation = seededRandom(baseSeed + 2) * 1;
+    const x = layer6X[i]!;
 
     clouds.push({
-      position: [layer6X[i] + xVariation, -2.2 + yVariation, 4.5 + zVariation],
+      position: [x + xVariation, -2.2 + yVariation, 4.5 + zVariation],
       rotation: [
         seededRandom(baseSeed + 3) * Math.PI,
         seededRandom(baseSeed + 4) * Math.PI,
@@ -456,7 +434,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 2.1 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.98 + seededRandom(baseSeed + 7) * 0.02,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -476,7 +454,7 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 2.0 + seededRandom(baseSeed + 6) * 0.25,
       opacity: 0.96 + seededRandom(baseSeed + 7) * 0.04,
-      geometry: geometries[baseSeed % 3],
+      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -551,10 +529,6 @@ const generatePings = (scale: number = 5): Ping[] => {
     const y = radius * Math.sin(latRad);
     const z = radius * Math.cos(latRad) * Math.sin(lngRad);
 
-    console.log(
-      `${data.continent}: [${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)}]`,
-    );
-
     pings.push({
       id: data.id,
       continent: data.continent,
@@ -582,11 +556,11 @@ watch(windowWidth, (newWidth) => {
 });
 
 // Valeurs responsives
-const planetScale = computed(() => {
+const planetScale = computed((): [number, number, number] => {
   return windowWidth.value < 768 ? [3, 3, 3] : [5, 5, 5];
 });
 
-const sunPosition = computed(() => {
+const sunPosition = computed((): [number, number, number] => {
   // Sur mobile: descendre le soleil (Y=1), sur desktop: le garder plus haut (Y=3)
   return windowWidth.value < 768 ? [5, 1, -15] : [5, 3, -15];
 });
@@ -709,7 +683,7 @@ onMounted(() => {
   }
 
   // Initialiser le raycaster
-  raycaster = new THREE.Raycaster();
+  _raycaster = new THREE.Raycaster();
 
   // Créer une caméra pour le raycasting avec les mêmes paramètres que le template
   const canvas = canvasRef.value?.querySelector("canvas");
@@ -718,7 +692,9 @@ onMounted(() => {
     const height = canvas.clientHeight || window.innerHeight;
     camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
     camera.position.set(0, 2, 10);
-    camera.updateProjectionMatrix();
+    if (camera instanceof THREE.PerspectiveCamera) {
+      camera.updateProjectionMatrix();
+    }
     console.log("Raycaster camera initialized");
   }
 
@@ -739,9 +715,7 @@ onMounted(() => {
   watch(
     () => gltf.value?.scene,
     (scene) => {
-      console.log("GLB scene detected:", scene);
       if (scene && !animationStarted.value) {
-        console.log("Starting animation...");
         startAnimation();
       }
     },
@@ -751,8 +725,8 @@ onMounted(() => {
 
 watch(
   () => gltf.value,
-  (newGltf) => {
-    console.log("gltf.value changed:", newGltf);
+  () => {
+    // Watching for gltf value changes
   },
   { deep: true },
 );
@@ -770,22 +744,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    ref="canvasRef"
-    style="
-      width: 100%;
-      height: 100vh;
-      background-color: #f4f4f4;
-      background-image:
-        linear-gradient(rgba(180, 180, 180, 0.2) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(180, 180, 180, 0.2) 1px, transparent 1px);
-      background-size: 60px 60px;
-      user-select: none;
-      z-index: 0;
-      overflow: hidden;
-    "
-    :style="{ cursor: isHoveringPlanet ? 'grab' : 'auto' }"
-  >
+  <div ref="canvasRef" :style="canvasStyle">
     <!-- Titre en haut à gauche -->
     <h1
       class="fixed left-5 md:left-8 lg:left-10 z-50 m-0 text-[3rem] md:text-[4.5rem] lg:text-[6rem] font-black top-24 md:top-8 lg:top-10 bg-clip-text text-transparent"
@@ -794,7 +753,7 @@ onUnmounted(() => {
           'linear-gradient(90deg, #FF69B4, #FF1493, #C71585, #D94C8A, #FF1493, #FF69B4)',
       }"
     >
-      Réenchante <br>
+      Réenchante <br />
       le Monde
     </h1>
 
@@ -886,6 +845,8 @@ onUnmounted(() => {
             :object="gltf?.scene"
             :scale="planetScale"
             :position="[0, 0, 0]"
+            @pointerenter="isHoveringPlanet = true"
+            @pointerleave="isHoveringPlanet = false"
           />
         </Suspense>
 
