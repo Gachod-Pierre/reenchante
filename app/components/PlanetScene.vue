@@ -1,19 +1,123 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import { useGLTF } from "@tresjs/cientos";
+import * as THREE from "three";
 
 const { state: gltf } = useGLTF("/models/earth-cartoon.glb");
 const canvasRef = ref();
 let animationId: number;
 const animationStarted = ref(false);
+let camera: THREE.PerspectiveCamera | THREE.Camera | null = null;
+let raycaster: THREE.Raycaster | null = null;
 
 const isDragging = ref(false);
 const isHoveringPlanet = ref(false);
 const previousMousePosition = ref({ x: 0, y: 0 });
 const rotationDelta = ref({ x: 0, y: 0 });
+const planetGroupRotation = ref({ x: 0, y: 0 });
 const windowWidth = ref(
   typeof window !== "undefined" ? window.innerWidth : 1024,
 );
+const hoveredPingId = ref<string | null>(null);
+const planetGroupRef = ref<THREE.Group | null>(null);
+const rainbowArcs = ref<
+  Array<{ geometry: THREE.BufferGeometry; color: string }>
+>([]);
+
+// Fonction pour créer une texture arc-en-ciel
+const createRainbowTexture = (): THREE.CanvasTexture => {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 128;
+  const ctx = canvas.getContext("2d")!;
+
+  const gradient = ctx.createLinearGradient(0, 0, 512, 0);
+  gradient.addColorStop(0, "#FF0000");
+  gradient.addColorStop(0.17, "#FF7F00");
+  gradient.addColorStop(0.33, "#FFFF00");
+  gradient.addColorStop(0.5, "#00FF00");
+  gradient.addColorStop(0.67, "#0000FF");
+  gradient.addColorStop(0.83, "#4B0082");
+  gradient.addColorStop(1, "#9400D3");
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 512, 128);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  return texture;
+};
+
+// Fonction pour créer une géométrie d'arc en ciel
+const createRainbowGeometry = (): THREE.BufferGeometry => {
+  const geometry = new THREE.BufferGeometry();
+  const points: THREE.Vector3[] = [];
+
+  // Créer une courbe d'arc classique moins prononcée
+  const segments = 64;
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const angle = t * Math.PI; // 0 à 180 degrés
+    const x = (t - 0.5) * 40; // De -20 à 20
+    const y = Math.sin(angle) * 6; // Hauteur maximale de 6 (moins haut)
+    const z = -12;
+    points.push(new THREE.Vector3(x, y, z));
+  }
+
+  // Créer une courbe Catmull-Rom
+  const curve = new THREE.CatmullRomCurve3(points);
+  const tubeGeometry = new THREE.TubeGeometry(curve, 64, 0.5, 8, false);
+
+  return tubeGeometry;
+};
+
+// Fonction pour créer plusieurs arcs en ciel avec des couleurs distinctes
+const createRainbowArcs = (): Array<{
+  geometry: THREE.BufferGeometry;
+  color: string;
+}> => {
+  const rainbowColors = [
+    "#FF0000", // Rouge
+    "#FF7F00", // Orange
+    "#FFFF00", // Jaune
+    "#00FF00", // Vert
+    "#0000FF", // Bleu
+    "#4B0082", // Indigo
+    "#9400D3", // Violet
+  ];
+
+  // Paramètres responsifs
+  const isMobile = windowWidth.value < 768;
+  const arcHeight = isMobile ? 5.5 : 7.5; // Moins haut sur mobile
+  const arcWidth = isMobile ? 32 : 48; // Plus étroit sur mobile
+  const yStartOffset = isMobile ? -1.5 : -1.5; // Décalé vers le bas sur mobile
+  const zPosition = isMobile ? -8 : -8; // Même profondeur
+
+  const arcs = rainbowColors.map((color, index) => {
+    const segments = 64;
+    const points: THREE.Vector3[] = [];
+
+    // Offset vertical pour chaque arc (espacés de 0.3)
+    const yOffset = yStartOffset + index * 0.3;
+
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const angle = t * Math.PI;
+      const x = (t - 0.5) * arcWidth;
+      const y = Math.sin(angle) * arcHeight + yOffset;
+      const z = zPosition;
+      points.push(new THREE.Vector3(x, y, z));
+    }
+
+    const curve = new THREE.CatmullRomCurve3(points);
+    const tubeGeometry = new THREE.TubeGeometry(curve, 64, 0.3, 8, false);
+
+    return { geometry: tubeGeometry, color };
+  });
+
+  return arcs;
+};
 
 // Interface pour les nuages générés
 interface Cloud {
@@ -22,6 +126,17 @@ interface Cloud {
   scale: number;
   opacity: number;
   geometry: "icosahedron" | "dodecahedron" | "octahedron";
+}
+
+// Interface pour les pings (actions sur continents)
+interface Ping {
+  id: string;
+  continent: string;
+  position: [number, number, number]; // Position sur la surface de la planète
+  scale: number;
+  currentScale: number; // Scale courante interpolée
+  hovered: boolean;
+  actionCount: number;
 }
 
 // Générateur de nombre pseudo-aléatoire seeded pour reproducibilité
@@ -368,11 +483,112 @@ const generateClouds = (): Cloud[] => {
   return clouds;
 };
 
+// Génération des pings sur les continents
+const generatePings = (scale: number = 5): Ping[] => {
+  const pings: Ping[] = [];
+
+  // Pings positionnés sur les continents réels
+  const pingData = [
+    {
+      id: "europe",
+      continent: "Europe",
+      lat: 26.6,
+      lng: 3.74,
+      actions: 8,
+    },
+    {
+      id: "afrique",
+      continent: "Afrique",
+      lat: -5.25,
+      lng: -8.97,
+      actions: 8,
+    },
+    {
+      id: "asie",
+      continent: "Asie",
+      lat: 14.46,
+      lng: -75.45,
+      actions: 8,
+    },
+    {
+      id: "océanie",
+      continent: "Océanie",
+      lat: -31.64,
+      lng: -115.83,
+      actions: 8,
+    },
+    {
+      id: "antarctique",
+      continent: "Antarctique",
+      lat: -87.69,
+      lng: 170.99,
+      actions: 8,
+    },
+    {
+      id: "amérique-nord",
+      continent: "Amérique du Nord",
+      lat: 23.48,
+      lng: 108.29,
+      actions: 8,
+    },
+    {
+      id: "amérique-sud",
+      continent: "Amérique du Sud",
+      lat: -27.56,
+      lng: 73.21,
+      actions: 8,
+    },
+  ];
+
+  pingData.forEach((data) => {
+    // Convertir lat/lng en coordonnées cartésiennes
+    // Le radius s'adapte au scale de la planète (3 sur mobile, 5 sur desktop)
+    const radius = 5.2 * (scale / 5);
+    const latRad = (data.lat * Math.PI) / 180;
+    const lngRad = (data.lng * Math.PI) / 180;
+
+    const x = radius * Math.cos(latRad) * Math.cos(lngRad);
+    const y = radius * Math.sin(latRad);
+    const z = radius * Math.cos(latRad) * Math.sin(lngRad);
+
+    console.log(
+      `${data.continent}: [${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)}]`,
+    );
+
+    pings.push({
+      id: data.id,
+      continent: data.continent,
+      position: [x, y, z],
+      scale: 0.6,
+      currentScale: 0.6,
+      hovered: false,
+      actionCount: data.actions,
+    });
+  });
+
+  return pings;
+};
+
 const clouds = ref<Cloud[]>(generateClouds());
+
+// Déterminer le scale initial et générer les pings
+const initialScale = windowWidth.value < 768 ? 3 : 5;
+const pings = ref<Ping[]>(generatePings(initialScale));
+
+// Recalculer les pings quand la taille de la fenêtre change
+watch(windowWidth, (newWidth) => {
+  const newScale = newWidth < 768 ? 3 : 5;
+  pings.value = generatePings(newScale);
+});
 
 // Valeurs responsives
 const planetScale = computed(() => {
   return windowWidth.value < 768 ? [3, 3, 3] : [5, 5, 5];
+});
+
+const sunPosition = computed(() => {
+  // Sur mobile: descendre le soleil (Y=1), sur desktop: le garder plus haut (Y=3)
+  return windowWidth.value < 768 ? [5, 1, -15] : [5, 3, -15];
 });
 
 const hoverRadius = computed(() => {
@@ -384,20 +600,28 @@ const startAnimation = () => {
   animationStarted.value = true;
 
   const animate = () => {
-    if (gltf.value?.scene) {
-      gltf.value.scene.rotation.y += 0.0005;
-      gltf.value.scene.rotation.y += rotationDelta.value.y;
-      gltf.value.scene.rotation.x += rotationDelta.value.x;
-      rotationDelta.value.x *= 0.95;
-      rotationDelta.value.y *= 0.95;
-    }
+    // Mettre à jour la rotation du groupe (planète + pings)
+    planetGroupRotation.value.y += 0.0005;
+    planetGroupRotation.value.y += rotationDelta.value.y;
+    planetGroupRotation.value.x += rotationDelta.value.x;
+    rotationDelta.value.x *= 0.95;
+    rotationDelta.value.y *= 0.95;
+
+    // Interpoler progressivement la scale des pings
+    pings.value.forEach((ping) => {
+      const targetScale = hoveredPingId.value === ping.id ? 0.95 : 0.6;
+      ping.currentScale += (targetScale - ping.currentScale) * 0.12; // Interpolation linéaire
+    });
+
     animationId = requestAnimationFrame(animate);
   };
   animate();
 };
 
 const handleMouseDown = (e: MouseEvent) => {
+  // Rotation de la planète
   if (!isHoveringPlanet.value) return;
+
   isDragging.value = true;
   previousMousePosition.value = { x: e.clientX, y: e.clientY };
 };
@@ -431,6 +655,24 @@ const handleMouseUp = () => {
   isDragging.value = false;
 };
 
+const handlePingHover = (pingId: string, isHovering: boolean) => {
+  if (isHovering) {
+    hoveredPingId.value = pingId;
+  } else if (hoveredPingId.value === pingId) {
+    hoveredPingId.value = null;
+  }
+};
+
+const handlePingClick = (pingId: string) => {
+  const ping = pings.value.find((p) => p.id === pingId);
+  if (ping) {
+    console.log(
+      `Clicked on ${ping.continent} ping with ${ping.actionCount} actions`,
+    );
+    // TODO: Afficher l'overlay avec les actions du continent
+  }
+};
+
 onMounted(() => {
   // Attacher les listeners au div conteneur qui existe immédiatement
   const container = canvasRef.value;
@@ -443,28 +685,54 @@ onMounted(() => {
     // Support tactile pour mobile
     container.addEventListener("touchstart", (e: TouchEvent) => {
       if (e.touches.length > 0) {
-        const touch = e.touches[0];
-        handleMouseDown({
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-        } as MouseEvent);
+        const touch = e.touches?.[0];
+        if (touch) {
+          handleMouseDown({
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+          } as MouseEvent);
+        }
       }
     });
     container.addEventListener("touchmove", (e: TouchEvent) => {
       if (e.touches.length > 0) {
-        const touch = e.touches[0];
-        handleMouseMove({
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-        } as MouseEvent);
+        const touch = e.touches?.[0];
+        if (touch) {
+          handleMouseMove({
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+          } as MouseEvent);
+        }
       }
     });
     container.addEventListener("touchend", handleMouseUp);
   }
 
+  // Initialiser le raycaster
+  raycaster = new THREE.Raycaster();
+
+  // Créer une caméra pour le raycasting avec les mêmes paramètres que le template
+  const canvas = canvasRef.value?.querySelector("canvas");
+  if (canvas) {
+    const width = canvas.clientWidth || window.innerWidth;
+    const height = canvas.clientHeight || window.innerHeight;
+    camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+    camera.position.set(0, 2, 10);
+    camera.updateProjectionMatrix();
+    console.log("Raycaster camera initialized");
+  }
+
   // Écouter les changements de taille de la fenêtre
   window.addEventListener("resize", () => {
     windowWidth.value = window.innerWidth;
+  });
+
+  // Créer les arcs en ciel
+  rainbowArcs.value = createRainbowArcs();
+
+  // Recréer les arcs quand la fenêtre change de taille
+  watch(windowWidth, () => {
+    rainbowArcs.value = createRainbowArcs();
   });
 
   // Watch pour démarrer l'animation dès que le GLB se charge
@@ -518,13 +786,72 @@ onUnmounted(() => {
     "
     :style="{ cursor: isHoveringPlanet ? 'grab' : 'auto' }"
   >
-    <TresCanvas clear-color="white" :options="{ alpha: true, antialias: true }">
-      <TresPerspectiveCamera :position="[0, 2, 10]" :fov="50" />
+    <!-- Titre en haut à gauche -->
+    <h1
+      class="fixed left-5 md:left-8 lg:left-10 z-50 m-0 text-[3rem] md:text-[4.5rem] lg:text-[6rem] font-black top-24 md:top-8 lg:top-10 bg-clip-text text-transparent"
+      :style="{
+        backgroundImage:
+          'linear-gradient(90deg, #FF69B4, #FF1493, #C71585, #D94C8A, #FF1493, #FF69B4)',
+      }"
+    >
+      Réenchante <br>
+      le Monde
+    </h1>
+
+    <TresCanvas alpha :clear-alpha="0" clear-color="#000000" antialias>
+      <TresPerspectiveCamera
+        ref="cameraRef"
+        :position="[0, 2, 10]"
+        :fov="50"
+        @update="(c: any) => (camera = c)"
+      />
       <TresAmbientLight :intensity="2" />
       <TresDirectionalLight :position="[10, 10, 10]" :intensity="2" />
 
+      <!-- Soleil en arrière-plan -->
+      <TresMesh :position="sunPosition" :scale="[4, 4, 4]">
+        <TresSphereGeometry :args="[1, 64, 64]" />
+        <TresMeshStandardMaterial
+          color="#ffff00"
+          emissive="#ffff00"
+          :emissive-intensity="3"
+          :tone-mapped="false"
+        />
+      </TresMesh>
+
+      <!-- Halo de brillance du soleil -->
+      <TresMesh
+        :position="sunPosition"
+        :scale="[4.5, 4.5, 4.5]"
+        :render-order="10"
+      >
+        <TresSphereGeometry :args="[1, 32, 32]" />
+        <TresMeshBasicMaterial
+          color="#ffff00"
+          transparent
+          :opacity="0.8"
+          :depth-write="false"
+          :depth-test="true"
+        />
+      </TresMesh>
+
+      <!-- Arcs en ciel multiples avec couleurs distinctes -->
+      <template
+        v-for="(arc, index) in rainbowArcs"
+        :key="`rainbow-arc-${index}`"
+      >
+        <TresMesh :position="[0, 0, 0]">
+          <primitive :object="arc.geometry" />
+          <TresMeshStandardMaterial
+            :color="arc.color"
+            emissive="#ffffff"
+            :emissive-intensity="0.3"
+          />
+        </TresMesh>
+      </template>
+
       <!-- Nuages générés procéduralement -->
-      <template v-for="(cloud, index) in clouds" :key="index">
+      <template v-for="(cloud, index) in clouds" :key="`cloud-${index}`">
         <TresMesh :position="cloud.position" :rotation="cloud.rotation">
           <!-- Icosahedron -->
           <template v-if="cloud.geometry === 'icosahedron'">
@@ -547,14 +874,39 @@ onUnmounted(() => {
         </TresMesh>
       </template>
 
-      <!-- Planète GLB positionnée en bas du viewport -->
-      <Suspense v-if="gltf?.scene">
-        <primitive
-          :object="gltf?.scene"
-          :scale="planetScale"
-          :position="[0, -2, 0]"
-        />
-      </Suspense>
+      <!-- Groupe contenant la planète et les pings (pour la rotation commune) -->
+      <TresGroup
+        ref="planetGroupRef"
+        :position="[0, -2, 0]"
+        :rotation="[planetGroupRotation.x, planetGroupRotation.y, 0]"
+      >
+        <!-- Planète GLB (position relative au groupe qui est à [0, -2, 0]) -->
+        <Suspense v-if="gltf?.scene">
+          <primitive
+            :object="gltf?.scene"
+            :scale="planetScale"
+            :position="[0, 0, 0]"
+          />
+        </Suspense>
+
+        <!-- Pings rouges accrochés à la planète -->
+        <template v-for="ping in pings" :key="`ping-group-${ping.id}`">
+          <TresMesh
+            :position="ping.position"
+            :scale="[ping.currentScale, ping.currentScale, ping.currentScale]"
+            @pointerenter="handlePingHover(ping.id, true)"
+            @pointerleave="handlePingHover(ping.id, false)"
+            @click="handlePingClick(ping.id)"
+          >
+            <TresSphereGeometry :args="[1, 32, 32]" />
+            <TresMeshStandardMaterial
+              color="#ff69b4"
+              emissive="#ff1493"
+              :emissive-intensity="hoveredPingId === ping.id ? 1.2 : 0.4"
+            />
+          </TresMesh>
+        </template>
+      </TresGroup>
     </TresCanvas>
   </div>
 </template>

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useRoute } from "vue-router";
+
+const route = useRoute();
 const scrollY = ref(0);
 const isHeaderHidden = ref(false);
 const isHovering = ref(false);
@@ -39,45 +43,61 @@ onUnmounted(() => {
 const shouldShowHeader = computed(
   () => !isHeaderHidden.value || isHovering.value,
 );
+
+// Fonction pour vérifier si un lien est actif
+const isLinkActive = (path: string) => {
+  console.log("Checking path:", path, "Current route:", route.path);
+  return route.path === path;
+};
 </script>
 
 <template>
   <header
-    class="fixed top-0 left-0 right-0 z-50"
+    class="fixed top-0 left-0 right-0 z-[60]"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
   >
     <!-- DESKTOP: Bulle ovale du header -->
     <div
-      class="hidden lg:flex items-center justify-center mt-6 px-8 py-4 ml-auto mr-4 bg-black rounded-full w-fit transition-transform duration-300 ease-in-out"
+      class="hidden lg:flex items-center justify-center mt-6 px-8 py-4 ml-auto mr-4 bg-[#ff69b4] rounded-full w-fit transition-transform duration-300 ease-in-out"
       :class="shouldShowHeader ? 'translate-y-0' : '-translate-y-full'"
       style="will-change: transform"
     >
       <nav class="flex items-center gap-8">
-        <NuxtLink to="/" class="text-white hover:text-gray-300 transition">
+        <NuxtLink
+          to="/"
+          class="text-white font-bold hover:text-gray-300 transition"
+          :style="isLinkActive('/') ? { color: 'rgb(194,0,97)' } : {}"
+        >
           Home
         </NuxtLink>
         <NuxtLink
           to="/actions"
-          class="text-white hover:text-gray-300 transition"
+          class="text-white font-bold hover:text-gray-300 transition"
+          :style="isLinkActive('/actions') ? { color: 'rgb(194,0,97)' } : {}"
         >
           Actions
         </NuxtLink>
         <NuxtLink
           to="/gallery"
-          class="text-white hover:text-gray-300 transition"
+          class="text-white font-bold hover:text-gray-300 transition"
+          :style="isLinkActive('/gallery') ? { color: 'rgb(194,0,97)' } : {}"
         >
           Galerie
         </NuxtLink>
         <NuxtLink
           to="/leaderboard"
-          class="text-white hover:text-gray-300 transition"
+          class="text-white font-bold hover:text-gray-300 transition"
+          :style="
+            isLinkActive('/leaderboard') ? { color: 'rgb(194,0,97)' } : {}
+          "
         >
           Classement
         </NuxtLink>
         <NuxtLink
           to="/dashboard"
-          class="text-white hover:text-gray-300 transition"
+          class="text-white font-bold hover:text-gray-300 transition"
+          :style="isLinkActive('/dashboard') ? { color: 'rgb(194,0,97)' } : {}"
         >
           Dashboard
         </NuxtLink>
@@ -88,7 +108,7 @@ const shouldShowHeader = computed(
     <div class="lg:hidden">
       <!-- Grand fond noir qui s'expande depuis le petit rond (avec clip-path pour garder la forme) -->
       <div
-        class="fixed inset-0 bg-black transition-all duration-500 ease-in-out overflow-hidden"
+        class="fixed inset-0 bg-[#ff69b4] transition-all duration-500 ease-in-out overflow-hidden"
         :style="
           isMenuOpen
             ? 'clip-path: circle(150% at calc(100% - 43px) 45px)'
@@ -101,39 +121,48 @@ const shouldShowHeader = computed(
         <!-- Navigation menu (appears when expanded) -->
         <nav
           v-if="isMenuOpen"
-          class="flex flex-col items-end gap-12 pt-32 pr-8 text-white text-2xl w-full h-full"
+          class="flex flex-col items-end gap-12 pt-32 pr-8 text-2xl w-full h-full"
         >
           <NuxtLink
             to="/"
-            class="hover:text-gray-300 transition"
+            class="hover:text-gray-300 transition text-white"
+            :style="isLinkActive('/') ? { color: 'rgb(194,0,97)' } : {}"
             @click="isMenuOpen = false"
           >
             Home
           </NuxtLink>
           <NuxtLink
             to="/actions"
-            class="hover:text-gray-300 transition"
+            class="hover:text-gray-300 transition text-white"
+            :style="isLinkActive('/actions') ? { color: 'rgb(194,0,97)' } : {}"
             @click="isMenuOpen = false"
           >
             Actions
           </NuxtLink>
           <NuxtLink
             to="/gallery"
-            class="hover:text-gray-300 transition"
+            class="hover:text-gray-300 transition text-white"
+            :style="isLinkActive('/gallery') ? { color: 'rgb(194,0,97)' } : {}"
             @click="isMenuOpen = false"
           >
             Galerie
           </NuxtLink>
           <NuxtLink
             to="/leaderboard"
-            class="hover:text-gray-300 transition"
+            class="hover:text-gray-300 transition text-white"
+            :style="
+              isLinkActive('/leaderboard') ? { color: 'rgb(194,0,97)' } : {}
+            "
             @click="isMenuOpen = false"
           >
             Leaderboard
           </NuxtLink>
           <NuxtLink
             to="/dashboard"
-            class="hover:text-gray-300 transition"
+            class="hover:text-gray-300 transition text-white"
+            :style="
+              isLinkActive('/dashboard') ? { color: 'rgb(194,0,97)' } : {}
+            "
             @click="isMenuOpen = false"
           >
             Dashboard
