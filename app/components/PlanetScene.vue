@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import { useGLTF } from "@tresjs/cientos";
 
 const { state: gltf } = useGLTF("/models/earth-cartoon.glb");
@@ -11,6 +11,18 @@ const isDragging = ref(false);
 const isHoveringPlanet = ref(false);
 const previousMousePosition = ref({ x: 0, y: 0 });
 const rotationDelta = ref({ x: 0, y: 0 });
+const windowWidth = ref(
+  typeof window !== "undefined" ? window.innerWidth : 1024,
+);
+
+// Valeurs responsives
+const planetScale = computed(() => {
+  return windowWidth.value < 768 ? [3, 3, 3] : [5, 5, 5];
+});
+
+const hoverRadius = computed(() => {
+  return windowWidth.value < 768 ? 400 : 500;
+});
 
 const startAnimation = () => {
   if (animationStarted.value || !gltf.value?.scene) return;
@@ -36,18 +48,17 @@ const handleMouseDown = (e: MouseEvent) => {
 };
 
 const handleMouseMove = (e: MouseEvent) => {
-  // Vérifie si la souris est sur la zone centrale (approximation pour la planète)
+  // ANCIEN CODE - Détection circulaire simple (fonctionne bien)
   const rect = canvasRef.value?.getBoundingClientRect();
   if (rect) {
     const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
+    const centerY = rect.height * 0.95;
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
     const distanceFromCenter = Math.sqrt(
       Math.pow(mouseX - centerX, 2) + Math.pow(mouseY - centerY, 2),
     );
-    // Si à moins de 200px du centre, on considère que c'est sur la planète
-    isHoveringPlanet.value = distanceFromCenter < 250;
+    isHoveringPlanet.value = distanceFromCenter < hoverRadius.value;
   }
 
   if (!isDragging.value || !isHoveringPlanet.value) return;
@@ -73,7 +84,33 @@ onMounted(() => {
     container.addEventListener("mousemove", handleMouseMove);
     container.addEventListener("mouseup", handleMouseUp);
     container.addEventListener("mouseleave", handleMouseUp);
+
+    // Support tactile pour mobile
+    container.addEventListener("touchstart", (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        handleMouseDown({
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+        } as MouseEvent);
+      }
+    });
+    container.addEventListener("touchmove", (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        handleMouseMove({
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+        } as MouseEvent);
+      }
+    });
+    container.addEventListener("touchend", handleMouseUp);
   }
+
+  // Écouter les changements de taille de la fenêtre
+  window.addEventListener("resize", () => {
+    windowWidth.value = window.innerWidth;
+  });
 
   // Watch pour démarrer l'animation dès que le GLB se charge
   watch(
@@ -118,17 +155,22 @@ onUnmounted(() => {
       background: transparent;
       user-select: none;
       z-index: 0;
+      overflow: hidden;
     "
     :style="{ cursor: isHoveringPlanet ? 'grab' : 'auto' }"
   >
     <TresCanvas clear-color="white">
-      <TresPerspectiveCamera :position="[0, 0, 10]" :fov="50" />
+      <TresPerspectiveCamera :position="[0, 2, 10]" :fov="50" />
       <TresAmbientLight :intensity="2" />
       <TresDirectionalLight :position="[10, 10, 10]" :intensity="2" />
 
-      <!-- Planète GLB -->
+      <!-- Planète GLB positionnée en bas du viewport -->
       <Suspense v-if="gltf?.scene">
-        <primitive :object="gltf?.scene" :scale="[3, 3, 3]" />
+        <primitive
+          :object="gltf?.scene"
+          :scale="planetScale"
+          :position="[0, -2, 0]"
+        />
       </Suspense>
     </TresCanvas>
   </div>
