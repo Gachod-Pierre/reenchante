@@ -112,7 +112,13 @@ onUnmounted(() => {
 <template>
   <div
     ref="canvasRef"
-    style="width: 100%; height: 100vh; background: transparent; user-select: none"
+    style="
+      width: 100%;
+      height: 100vh;
+      background: transparent;
+      user-select: none;
+      z-index: 0;
+    "
     :style="{ cursor: isHoveringPlanet ? 'grab' : 'auto' }"
   >
     <TresCanvas clear-color="white">
