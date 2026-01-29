@@ -2,7 +2,6 @@
 import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import { useGLTF } from "@tresjs/cientos";
 import * as THREE from "three";
-import Stats from "three/examples/jsm/libs/stats.module.js";
 
 const { state: gltf } = useGLTF("/models/earth-cartoon.glb");
 const canvasRef = ref();
@@ -10,7 +9,6 @@ const animationStarted = ref(false);
 let animationFrameId: number | null = null;
 let camera: THREE.PerspectiveCamera | THREE.Camera | null = null;
 let _raycaster: THREE.Raycaster | null = null;
-let stats: InstanceType<typeof Stats> | null = null;
 
 const isDragging = ref(false);
 const isHoveringPlanet = ref(false);
@@ -18,7 +16,6 @@ const isHoveringPlanet = ref(false);
 let previousMousePosition = { x: 0, y: 0 };
 // ⚠️ IMPORTANT: planetGroupRotation n'est utilisée QUE pour les binding Vue du template
 // La vraie rotation est gérée par la variable Three.js "planetGroupThreeObject" ci-dessous
-const planetGroupRotation = ref({ x: 0, y: 0 });
 const windowWidth = ref(
   typeof window !== "undefined" ? window.innerWidth : 1024,
 );
@@ -50,7 +47,7 @@ let lastHoveringPlanetState = false;
 const cloudInstancedMesh = ref<THREE.InstancedMesh | null>(null);
 
 // ✅ Debug timing NON-réactif (mis à jour 60x/sec, ne doit pas trigger re-render)
-let debugTimings = {
+const debugTimings = {
   rotationUpdate: 0,
   pingScaleUpdate: 0,
   totalFrame: 0,
@@ -707,7 +704,6 @@ const startAnimation = () => {
 
   // Lancer le loop d'animation
   const animate = () => {
-    stats?.update();
     renderLoopCallback?.();
     animationFrameId = requestAnimationFrame(animate);
   };
@@ -818,7 +814,7 @@ const handlePingClick = (pingId: string) => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   // Attacher les listeners au div conteneur qui existe immédiatement
   const container = canvasRef.value;
   if (container) {
@@ -864,14 +860,6 @@ onMounted(() => {
 
   // Initialiser le raycaster
   _raycaster = new THREE.Raycaster();
-
-  // Initialiser Stats widget pour le monitoring FPS
-  stats = new Stats();
-  stats.domElement.style.position = "fixed";
-  stats.domElement.style.top = "10px";
-  stats.domElement.style.left = "10px";
-  stats.domElement.style.zIndex = "1000";
-  document.body.appendChild(stats.domElement);
 
   // Pré-cacher le rect du canvas (une seule fois au setup)
   const canvas = canvasRef.value?.querySelector("canvas");
@@ -954,12 +942,6 @@ onUnmounted(() => {
   }
   renderLoopCallback = null;
 
-  // Retirer le widget Stats
-  if (stats && stats.domElement && stats.domElement.parentNode) {
-    stats.domElement.parentNode.removeChild(stats.domElement);
-    stats = null;
-  }
-
   // Disposer les géométries des arcs
   rainbowArcs.value.forEach((arc) => {
     arc.geometry.dispose();
@@ -999,7 +981,7 @@ onUnmounted(() => {
           'linear-gradient(90deg, #FF69B4, #FF1493, #C71585, #D94C8A, #FF1493, #FF69B4)',
       }"
     >
-      Réenchante <br />le Monde
+      Réenchante<br />le Monde
     </h1>
 
     <TresCanvas alpha :clear-alpha="0" clear-color="#000000" antialias>
