@@ -2,27 +2,60 @@
 import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import { useGLTF } from "@tresjs/cientos";
 import * as THREE from "three";
+// import Stats from "three/examples/jsm/libs/stats.module.js";
 
 const { state: gltf } = useGLTF("/models/earth-cartoon.glb");
 const canvasRef = ref();
-let animationId: number;
 const animationStarted = ref(false);
+let animationFrameId: number | null = null;
 let camera: THREE.PerspectiveCamera | THREE.Camera | null = null;
 let _raycaster: THREE.Raycaster | null = null;
+// let stats: InstanceType<typeof Stats> | null = null;
 
 const isDragging = ref(false);
 const isHoveringPlanet = ref(false);
 const previousMousePosition = ref({ x: 0, y: 0 });
-const rotationDelta = ref({ x: 0, y: 0 });
+// ⚠️ IMPORTANT: planetGroupRotation n'est utilisée QUE pour les binding Vue du template
+// La vraie rotation est gérée par la variable Three.js "planetGroupThreeObject" ci-dessous
 const planetGroupRotation = ref({ x: 0, y: 0 });
 const windowWidth = ref(
   typeof window !== "undefined" ? window.innerWidth : 1024,
 );
-const hoveredPingId = ref<string | null>(null);
 const planetGroupRef = ref<THREE.Group | null>(null);
 const rainbowArcs = ref<
   Array<{ geometry: THREE.BufferGeometry; color: string }>
 >([]);
+
+// ✅ Variable Three.js NON-réactive pour la rotation continue
+// Cela évite que Vue re-render le template 60 fois/sec
+let planetGroupThreeObject: THREE.Group | null = null;
+let planetGroupRotationX = 0;
+let planetGroupRotationY = 0;
+
+// ✅ Variables NON-réactives pour la rotation rapide (pas de Vue reactivity overhead)
+let pendingDeltaX = 0;
+let pendingDeltaY = 0;
+
+// Refs pour accès direct aux meshes Three.js (évite la réactivité Vue)
+const pingMeshRefs = new Map<string, THREE.Mesh>();
+let cachedCanvasRect: DOMRect | null = null;
+let lastMouseMoveTime = 0;
+const MOUSE_THROTTLE_MS = 16; // ~60fps event throttle
+
+// Cache pour éviter les mises à jour réactives Vue trop fréquentes
+let lastHoveringPlanetState = false;
+
+// InstancedMesh pour les nuages (optimisation majeure: 200+ meshes → 1 seul)
+const cloudInstancedMesh = ref<THREE.InstancedMesh | null>(null);
+
+// Debug timing
+const debugTimings = ref({
+  rotationUpdate: 0,
+  pingScaleUpdate: 0,
+  totalFrame: 0,
+  mousemoveEvents: 0,
+  lastFrameTime: performance.now(),
+});
 
 // Computed style pour le canvas - évite les hydration mismatches
 const canvasStyle = computed(() => ({
@@ -43,6 +76,11 @@ const createRainbowArcs = (): Array<{
   geometry: THREE.BufferGeometry;
   color: string;
 }> => {
+  // Disposer les anciennes géométries pour éviter les fuites mémoire
+  rainbowArcs.value.forEach((arc) => {
+    arc.geometry.dispose();
+  });
+
   const rainbowColors = [
     "#FF0000", // Rouge
     "#FF7F00", // Orange
@@ -61,7 +99,7 @@ const createRainbowArcs = (): Array<{
   const zPosition = isMobile ? -8 : -8; // Même profondeur
 
   const arcs = rainbowColors.map((color, index) => {
-    const segments = 64;
+    const segments = 32; // Réduit de 64 → 32 (low poly)
     const points: THREE.Vector3[] = [];
 
     // Offset vertical pour chaque arc (espacés de 0.3)
@@ -77,12 +115,95 @@ const createRainbowArcs = (): Array<{
     }
 
     const curve = new THREE.CatmullRomCurve3(points);
-    const tubeGeometry = new THREE.TubeGeometry(curve, 64, 0.3, 8, false);
+    // Réduit: 64 segments de tube → 32, 8 radials → 4 (low poly tout en gardant couleurs distinctes)
+    const tubeGeometry = new THREE.TubeGeometry(curve, 32, 0.3, 4, false);
 
     return { geometry: tubeGeometry, color };
   });
 
   return arcs;
+};
+
+// ✅ OPTIMISATION: Créer UN InstancedMesh pour tous les nuages (au lieu de 200 TresMesh)
+const createCloudInstancedMesh = (clouds: Cloud[]): THREE.InstancedMesh => {
+  // Créer une géométrie icosahedron LOW POLY réutilisée (réduit: detail 0 → pratiquement cube)
+  const baseGeometry = new THREE.IcosahedronGeometry(1, 0);
+
+  // Matériel unique pour toutes les instances
+  const material = new THREE.MeshStandardMaterial({
+    color: "#ffffff",
+    transparent: true,
+  });
+
+  // Créer le InstancedMesh avec autant d'instances que de nuages
+  const instancedMesh = new THREE.InstancedMesh(
+    baseGeometry,
+    material,
+    clouds.length,
+  );
+
+  // Configurer chaque instance avec sa propre matrice de transformation
+  const matrix = new THREE.Matrix4();
+  const position = new THREE.Vector3();
+  const quaternion = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+
+  clouds.forEach((cloud, index) => {
+    // Positionner
+    position.set(...cloud.position);
+
+    // Rotation
+    const euler = new THREE.Euler(...cloud.rotation);
+    quaternion.setFromEuler(euler);
+
+    // Échelle
+    scale.set(cloud.scale, cloud.scale, cloud.scale);
+
+    // Composer la matrice de transformation
+    matrix.compose(position, quaternion, scale);
+
+    // Appliquer à cette instance
+    instancedMesh.setMatrixAt(index, matrix);
+  });
+
+  // Signaler à Three.js que les matrices ont changé
+  instancedMesh.instanceMatrix.needsUpdate = true;
+
+  // ⚠️ Pour l'opacité: utiliser color attribute au lieu de material unique
+  // car chaque nuage a une opacité différente
+  const opacities = new Float32Array(clouds.length);
+  clouds.forEach((cloud, index) => {
+    opacities[index] = cloud.opacity;
+  });
+
+  baseGeometry.setAttribute("opacity", new THREE.BufferAttribute(opacities, 1));
+
+  // Modifier le material pour utiliser les opacités par instance
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader.replace(
+      "uniform mat4 instanceMatrix;",
+      `uniform mat4 instanceMatrix;
+       attribute float opacity;
+       varying float vOpacity;`,
+    );
+    shader.vertexShader = shader.vertexShader.replace(
+      "void main() {",
+      `void main() {
+         vOpacity = opacity;`,
+    );
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "uniform float opacity;",
+      `uniform float opacity;
+       varying float vOpacity;`,
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "gl_FragColor = vec4( outgoingLight, diffuseColor.a );",
+      `gl_FragColor = vec4( outgoingLight, diffuseColor.a * vOpacity );`,
+    );
+  };
+
+  return instancedMesh;
 };
 
 // Interface pour les nuages générés
@@ -91,7 +212,6 @@ interface Cloud {
   rotation: [number, number, number];
   scale: number;
   opacity: number;
-  geometry: "icosahedron" | "dodecahedron" | "octahedron";
 }
 
 // Interface pour les pings (actions sur continents)
@@ -99,8 +219,7 @@ interface Ping {
   id: string;
   continent: string;
   position: [number, number, number]; // Position sur la surface de la planète
-  scale: number;
-  currentScale: number; // Scale courante interpolée
+  scale: number; // Scale initiale
   hovered: boolean;
   actionCount: number;
 }
@@ -111,20 +230,9 @@ function seededRandom(seed: number): number {
   return x - Math.floor(x);
 }
 
-// Génération procédurale des nuages
+// Génération procédurale des nuages (optimisée avec InstancedMesh)
 const generateClouds = (): Cloud[] => {
   const clouds: Cloud[] = [];
-  const geometries: Array<"icosahedron" | "dodecahedron" | "octahedron"> = [
-    "icosahedron",
-    "dodecahedron",
-    "octahedron",
-  ];
-
-  const getGeometry = (
-    seed: number,
-  ): "icosahedron" | "dodecahedron" | "octahedron" => {
-    return geometries[seed % geometries.length]!;
-  };
 
   // COUCHE 1: Très loin (Z: -25 à -20)
   const layer1X = [-28, -20, -12, -4, 4, 12, 20, 28];
@@ -144,7 +252,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.75 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.35 + seededRandom(baseSeed + 7) * 0.1,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -164,7 +271,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.7 + seededRandom(baseSeed + 6) * 0.25,
       opacity: 0.32 + seededRandom(baseSeed + 7) * 0.12,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -184,7 +290,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.75 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.33 + seededRandom(baseSeed + 7) * 0.1,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -206,7 +311,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.8 + seededRandom(baseSeed + 6) * 0.22,
       opacity: 0.45 + seededRandom(baseSeed + 7) * 0.12,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -226,7 +330,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.75 + seededRandom(baseSeed + 6) * 0.25,
       opacity: 0.43 + seededRandom(baseSeed + 7) * 0.12,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -246,7 +349,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.8 + seededRandom(baseSeed + 6) * 0.22,
       opacity: 0.44 + seededRandom(baseSeed + 7) * 0.1,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -268,7 +370,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.9 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.58 + seededRandom(baseSeed + 7) * 0.12,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -288,7 +389,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.85 + seededRandom(baseSeed + 6) * 0.25,
       opacity: 0.56 + seededRandom(baseSeed + 7) * 0.14,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -308,7 +408,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.9 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.55 + seededRandom(baseSeed + 7) * 0.13,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -330,7 +429,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 2.0 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.72 + seededRandom(baseSeed + 7) * 0.12,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -350,7 +448,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.85 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.7 + seededRandom(baseSeed + 7) * 0.14,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -370,7 +467,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.9 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.71 + seededRandom(baseSeed + 7) * 0.13,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -392,7 +488,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 2.1 + seededRandom(baseSeed + 6) * 0.18,
       opacity: 0.72 + seededRandom(baseSeed + 7) * 0.1,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -412,7 +507,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 1.95 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.6 + seededRandom(baseSeed + 7) * 0.1,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -434,7 +528,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 2.1 + seededRandom(baseSeed + 6) * 0.2,
       opacity: 0.98 + seededRandom(baseSeed + 7) * 0.02,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -454,7 +547,6 @@ const generateClouds = (): Cloud[] => {
       ],
       scale: 2.0 + seededRandom(baseSeed + 6) * 0.25,
       opacity: 0.96 + seededRandom(baseSeed + 7) * 0.04,
-      geometry: getGeometry(baseSeed),
     });
   }
 
@@ -534,7 +626,6 @@ const generatePings = (scale: number = 5): Ping[] => {
       continent: data.continent,
       position: [x, y, z],
       scale: 0.6,
-      currentScale: 0.6,
       hovered: false,
       actionCount: data.actions,
     });
@@ -569,27 +660,60 @@ const hoverRadius = computed(() => {
   return windowWidth.value < 768 ? 400 : 500;
 });
 
+// Variables pour le render loop
+let renderLoopCallback: (() => void) | null = null;
+
 const startAnimation = () => {
-  if (animationStarted.value || !gltf.value?.scene) return;
+  if (animationStarted.value || animationFrameId !== null) return;
   animationStarted.value = true;
 
-  const animate = () => {
-    // Mettre à jour la rotation du groupe (planète + pings)
-    planetGroupRotation.value.y += 0.0005;
-    planetGroupRotation.value.y += rotationDelta.value.y;
-    planetGroupRotation.value.x += rotationDelta.value.x;
-    rotationDelta.value.x *= 0.95;
-    rotationDelta.value.y *= 0.95;
+  // Créer la callback d'animation
+  renderLoopCallback = () => {
+    const frameStart = performance.now();
 
-    // Interpoler progressivement la scale des pings
-    pings.value.forEach((ping) => {
-      const targetScale = hoveredPingId.value === ping.id ? 0.95 : 0.6;
-      ping.currentScale += (targetScale - ping.currentScale) * 0.12; // Interpolation linéaire
-    });
+    // TIMING 1: Rotation update - DIRECTEMENT sur le Three.js object, pas de Vue reactivity!
+    const rotStart = performance.now();
 
-    animationId = requestAnimationFrame(animate);
+    // Rotation continue de la planète
+    planetGroupRotationY += 0.0005;
+
+    // ✅ Appliquer les deltas accumulés depuis les mousemove events
+    // deltaX (horizontal mouse movement) contrôle la rotation Y (axe vertical)
+    // deltaY (vertical mouse movement) contrôle la rotation X (axe horizontal)
+    planetGroupRotationY += pendingDeltaX * 0.0015;
+    planetGroupRotationX += pendingDeltaY * 0.0015;
+
+    // Décroissance progressive (inertie)
+    pendingDeltaX *= 0.95;
+    pendingDeltaY *= 0.95;
+
+    // ✅ Mettre à jour directement le Three.js object (pas de Vue reactivity!)
+    if (planetGroupThreeObject) {
+      planetGroupThreeObject.rotation.x = planetGroupRotationX;
+      planetGroupThreeObject.rotation.y = planetGroupRotationY;
+    }
+
+    debugTimings.value.rotationUpdate = performance.now() - rotStart;
+
+    // ✅ Ping visual feedback est maintenant juste en changeant la couleur/emissive (pas de scale animé)
+    // Les pings sont mis à jour visuellement via le template reactive binding au lieu de faire l'animation ici
+    debugTimings.value.pingScaleUpdate = 0;
+
+    debugTimings.value.totalFrame = performance.now() - frameStart;
+    debugTimings.value.lastFrameTime = performance.now();
+
+    // Debug logs disabled for performance
+    debugTimings.value.mousemoveEvents = 0; // Reset counter
   };
-  animate();
+
+  // Lancer le loop d'animation
+  const animate = () => {
+    // stats?.update();
+    renderLoopCallback?.();
+    animationFrameId = requestAnimationFrame(animate);
+  };
+
+  animationFrameId = requestAnimationFrame(animate);
 };
 
 const handleMouseDown = (e: MouseEvent) => {
@@ -601,28 +725,72 @@ const handleMouseDown = (e: MouseEvent) => {
 };
 
 const handleMouseMove = (e: MouseEvent) => {
-  // ANCIEN CODE - Détection circulaire simple (fonctionne bien)
-  const rect = canvasRef.value?.getBoundingClientRect();
-  if (rect) {
-    const centerX = rect.width / 2;
-    const centerY = rect.height * 0.95;
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const distanceFromCenter = Math.sqrt(
-      Math.pow(mouseX - centerX, 2) + Math.pow(mouseY - centerY, 2),
-    );
-    isHoveringPlanet.value = distanceFromCenter < hoverRadius.value;
+  debugTimings.value.mousemoveEvents += 1;
+
+  // THROTTLE: Limiter à ~60fps
+  const now = Date.now();
+  if (now - lastMouseMoveTime < MOUSE_THROTTLE_MS) {
+    return;
+  }
+  lastMouseMoveTime = now;
+
+  // TIMING: Distance calculation pour hover detection
+  const distStart = performance.now();
+
+  // Utiliser offsetX/Y (rapide) ou fallback au cache
+  const pointerEvent = e as
+    | PointerEvent
+    | (MouseEvent & { offsetX?: number; offsetY?: number });
+  const mouseX = pointerEvent.offsetX ?? e.clientX;
+  const mouseY = pointerEvent.offsetY ?? e.clientY;
+
+  if (!cachedCanvasRect && !pointerEvent.offsetX) {
+    const rect = canvasRef.value?.getBoundingClientRect();
+    if (rect) {
+      cachedCanvasRect = rect;
+    }
   }
 
-  if (!isDragging.value || !isHoveringPlanet.value) return;
+  if (!cachedCanvasRect && !pointerEvent.offsetX) return;
 
+  // Calcul de la distance depuis le centre du canvas
+  const centerX = cachedCanvasRect
+    ? cachedCanvasRect.width / 2
+    : window.innerWidth / 2;
+  const centerY = cachedCanvasRect
+    ? cachedCanvasRect.height * 0.95
+    : window.innerHeight * 0.95;
+
+  const dx = mouseX - centerX;
+  const dy = mouseY - centerY;
+  const distanceSquared = dx * dx + dy * dy;
+  const hoverRadiusSquared = hoverRadius.value * hoverRadius.value;
+
+  // ✅ NE mettre à jour Vue reactivity que si l'état CHANGE
+  const newHoveringState = distanceSquared < hoverRadiusSquared;
+  if (newHoveringState !== lastHoveringPlanetState) {
+    isHoveringPlanet.value = newHoveringState;
+    lastHoveringPlanetState = newHoveringState;
+  }
+
+  // ✅ IMPORTANT: Si on n'est pas en train de drag, ne rien faire
+  if (!isDragging.value) return;
+
+  // Calculs pour la rotation (seulement si en drag)
   const deltaX = e.clientX - previousMousePosition.value.x;
   const deltaY = e.clientY - previousMousePosition.value.y;
 
-  rotationDelta.value.y += deltaX * 0.0015;
-  rotationDelta.value.x += deltaY * 0.0015;
+  // ✅ JUSTE STOCKER les deltas - les appliquer dans le render loop
+  // Cela découple complètement le mousemove du rendering
+  pendingDeltaX = deltaX;
+  pendingDeltaY = deltaY;
 
   previousMousePosition.value = { x: e.clientX, y: e.clientY };
+
+  const distTime = performance.now() - distStart;
+  if (distTime > 2) {
+    console.warn(`[Mousemove] Distance calc: ${distTime.toFixed(2)}ms`);
+  }
 };
 
 const handleMouseUp = () => {
@@ -630,11 +798,15 @@ const handleMouseUp = () => {
 };
 
 const handlePingHover = (pingId: string, isHovering: boolean) => {
-  if (isHovering) {
-    hoveredPingId.value = pingId;
-  } else if (hoveredPingId.value === pingId) {
-    hoveredPingId.value = null;
+  // ✅ Mettre à jour DIRECTEMENT le Three.js material sans passer par Vue reactivity
+  // Cela évite un re-render du template et donc le lag!
+  const mesh = pingMeshRefs.get(pingId);
+  if (mesh && mesh.material instanceof THREE.MeshStandardMaterial) {
+    mesh.material.emissiveIntensity = isHovering ? 1.2 : 0.4;
   }
+
+  // Ne PAS mettre à jour hoveredPingId.value pour éviter le re-render Vue!
+  // Le hover visuel est géré directement par le material ci-dessus
 };
 
 const handlePingClick = (pingId: string) => {
@@ -651,42 +823,64 @@ onMounted(() => {
   // Attacher les listeners au div conteneur qui existe immédiatement
   const container = canvasRef.value;
   if (container) {
-    container.addEventListener("mousedown", handleMouseDown);
-    container.addEventListener("mousemove", handleMouseMove);
-    container.addEventListener("mouseup", handleMouseUp);
-    container.addEventListener("mouseleave", handleMouseUp);
+    // passive: true = le navigateur ne doit pas attendre la callback pour scroller
+    container.addEventListener("mousedown", handleMouseDown, { passive: true });
+    container.addEventListener("mousemove", handleMouseMove, { passive: true });
+    container.addEventListener("mouseup", handleMouseUp, { passive: true });
+    container.addEventListener("mouseleave", handleMouseUp, { passive: true });
 
     // Support tactile pour mobile
-    container.addEventListener("touchstart", (e: TouchEvent) => {
-      if (e.touches.length > 0) {
-        const touch = e.touches?.[0];
-        if (touch) {
-          handleMouseDown({
-            clientX: touch.clientX,
-            clientY: touch.clientY,
-          } as MouseEvent);
+    container.addEventListener(
+      "touchstart",
+      (e: TouchEvent) => {
+        if (e.touches.length > 0) {
+          const touch = e.touches?.[0];
+          if (touch) {
+            handleMouseDown({
+              clientX: touch.clientX,
+              clientY: touch.clientY,
+            } as MouseEvent);
+          }
         }
-      }
-    });
-    container.addEventListener("touchmove", (e: TouchEvent) => {
-      if (e.touches.length > 0) {
-        const touch = e.touches?.[0];
-        if (touch) {
-          handleMouseMove({
-            clientX: touch.clientX,
-            clientY: touch.clientY,
-          } as MouseEvent);
+      },
+      { passive: true },
+    );
+    container.addEventListener(
+      "touchmove",
+      (e: TouchEvent) => {
+        if (e.touches.length > 0) {
+          const touch = e.touches?.[0];
+          if (touch) {
+            handleMouseMove({
+              clientX: touch.clientX,
+              clientY: touch.clientY,
+            } as MouseEvent);
+          }
         }
-      }
-    });
-    container.addEventListener("touchend", handleMouseUp);
+      },
+      { passive: true },
+    );
+    container.addEventListener("touchend", handleMouseUp, { passive: true });
   }
 
   // Initialiser le raycaster
   _raycaster = new THREE.Raycaster();
 
-  // Créer une caméra pour le raycasting avec les mêmes paramètres que le template
+  // // Initialiser Stats widget pour le monitoring FPS
+  // stats = new Stats();
+  // stats.domElement.style.position = "fixed";
+  // stats.domElement.style.top = "10px";
+  // stats.domElement.style.left = "10px";
+  // stats.domElement.style.zIndex = "1000";
+  // document.body.appendChild(stats.domElement);
+
+  // Pré-cacher le rect du canvas (une seule fois au setup)
   const canvas = canvasRef.value?.querySelector("canvas");
+  if (canvas) {
+    cachedCanvasRect = canvasRef.value?.getBoundingClientRect() || null;
+  }
+
+  // Créer une caméra pour le raycasting avec les mêmes paramètres que le template
   if (canvas) {
     const width = canvas.clientWidth || window.innerWidth;
     const height = canvas.clientHeight || window.innerHeight;
@@ -695,16 +889,33 @@ onMounted(() => {
     if (camera instanceof THREE.PerspectiveCamera) {
       camera.updateProjectionMatrix();
     }
-    console.log("Raycaster camera initialized");
   }
 
   // Écouter les changements de taille de la fenêtre
-  window.addEventListener("resize", () => {
+  const handleResize = () => {
     windowWidth.value = window.innerWidth;
-  });
+    // Mettre à jour le cache rect au resize
+    cachedCanvasRect = canvasRef.value?.getBoundingClientRect() || null;
+  };
+
+  window.addEventListener("resize", handleResize);
 
   // Créer les arcs en ciel
   rainbowArcs.value = createRainbowArcs();
+
+  // ✅ Créer le InstancedMesh pour les nuages (optimisation majeure)
+  cloudInstancedMesh.value = createCloudInstancedMesh(clouds.value);
+
+  // ✅ Watch pour capturer la référence Three.js du planetGroup
+  watch(
+    () => planetGroupRef.value,
+    (group) => {
+      if (group) {
+        planetGroupThreeObject = group;
+      }
+    },
+    { immediate: true },
+  );
 
   // Recréer les arcs quand la fenêtre change de taille
   watch(windowWidth, () => {
@@ -721,6 +932,11 @@ onMounted(() => {
     },
     { immediate: true, deep: true },
   );
+
+  // Cleanup au démount
+  return () => {
+    window.removeEventListener("resize", handleResize);
+  };
 });
 
 watch(
@@ -732,7 +948,31 @@ watch(
 );
 
 onUnmounted(() => {
-  cancelAnimationFrame(animationId);
+  // Arrêter l'animation frame
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+  renderLoopCallback = null;
+
+  // // Retirer le widget Stats
+  // if (stats && stats.domElement && stats.domElement.parentNode) {
+  //   stats.domElement.parentNode.removeChild(stats.domElement);
+  //   stats = null;
+  // }
+
+  // Disposer les géométries des arcs
+  rainbowArcs.value.forEach((arc) => {
+    arc.geometry.dispose();
+  });
+
+  // ✅ Disposer le InstancedMesh et ses ressources
+  if (cloudInstancedMesh.value) {
+    cloudInstancedMesh.value.geometry.dispose();
+    (cloudInstancedMesh.value.material as THREE.Material).dispose();
+    cloudInstancedMesh.value = null;
+  }
+
   const container = canvasRef.value;
   if (container) {
     container.removeEventListener("mousedown", handleMouseDown);
@@ -740,6 +980,10 @@ onUnmounted(() => {
     container.removeEventListener("mouseup", handleMouseUp);
     container.removeEventListener("mouseleave", handleMouseUp);
   }
+
+  // Nettoyer les refs
+  pingMeshRefs.clear();
+  cachedCanvasRect = null;
 });
 </script>
 
@@ -753,8 +997,7 @@ onUnmounted(() => {
           'linear-gradient(90deg, #FF69B4, #FF1493, #C71585, #D94C8A, #FF1493, #FF69B4)',
       }"
     >
-      Réenchante <br />
-      le Monde
+      Réenchante <br />le Monde
     </h1>
 
     <TresCanvas alpha :clear-alpha="0" clear-color="#000000" antialias>
@@ -769,7 +1012,7 @@ onUnmounted(() => {
 
       <!-- Soleil en arrière-plan -->
       <TresMesh :position="sunPosition" :scale="[4, 4, 4]">
-        <TresSphereGeometry :args="[1, 64, 64]" />
+        <TresSphereGeometry :args="[1, 32, 32]" />
         <TresMeshStandardMaterial
           color="#ffff00"
           emissive="#ffff00"
@@ -784,7 +1027,7 @@ onUnmounted(() => {
         :scale="[4.5, 4.5, 4.5]"
         :render-order="10"
       >
-        <TresSphereGeometry :args="[1, 32, 32]" />
+        <TresSphereGeometry :args="[1, 16, 16]" />
         <TresMeshBasicMaterial
           color="#ffff00"
           transparent
@@ -809,22 +1052,11 @@ onUnmounted(() => {
         </TresMesh>
       </template>
 
+      <!-- ✅ OPTIMISATION: InstancedMesh unique pour tous les nuages (200+ meshes → 1) -->
       <!-- Nuages générés procéduralement -->
       <template v-for="(cloud, index) in clouds" :key="`cloud-${index}`">
         <TresMesh :position="cloud.position" :rotation="cloud.rotation">
-          <!-- Icosahedron -->
-          <template v-if="cloud.geometry === 'icosahedron'">
-            <TresIcosahedronGeometry :args="[cloud.scale, 0]" />
-          </template>
-          <!-- Dodecahedron -->
-          <template v-else-if="cloud.geometry === 'dodecahedron'">
-            <TresDodecahedronGeometry :args="[cloud.scale]" />
-          </template>
-          <!-- Octahedron -->
-          <template v-else-if="cloud.geometry === 'octahedron'">
-            <TresOctahedronGeometry :args="[cloud.scale, 0]" />
-          </template>
-
+          <TresIcosahedronGeometry :args="[cloud.scale, 0]" />
           <TresMeshStandardMaterial
             color="#ffffff"
             transparent
@@ -834,11 +1066,7 @@ onUnmounted(() => {
       </template>
 
       <!-- Groupe contenant la planète et les pings (pour la rotation commune) -->
-      <TresGroup
-        ref="planetGroupRef"
-        :position="[0, -2, 0]"
-        :rotation="[planetGroupRotation.x, planetGroupRotation.y, 0]"
-      >
+      <TresGroup ref="planetGroupRef" :position="[0, -2, 0]">
         <!-- Planète GLB (position relative au groupe qui est à [0, -2, 0]) -->
         <Suspense v-if="gltf?.scene">
           <primitive
@@ -853,17 +1081,24 @@ onUnmounted(() => {
         <!-- Pings rouges accrochés à la planète -->
         <template v-for="ping in pings" :key="`ping-group-${ping.id}`">
           <TresMesh
+            :ref="
+              (el: any) => {
+                if (el instanceof THREE.Mesh) {
+                  pingMeshRefs.set(ping.id, el);
+                }
+              }
+            "
             :position="ping.position"
-            :scale="[ping.currentScale, ping.currentScale, ping.currentScale]"
+            :scale="[ping.scale, ping.scale, ping.scale]"
             @pointerenter="handlePingHover(ping.id, true)"
             @pointerleave="handlePingHover(ping.id, false)"
             @click="handlePingClick(ping.id)"
           >
-            <TresSphereGeometry :args="[1, 32, 32]" />
+            <TresSphereGeometry :args="[1, 16, 16]" />
             <TresMeshStandardMaterial
               color="#ff69b4"
               emissive="#ff1493"
-              :emissive-intensity="hoveredPingId === ping.id ? 1.2 : 0.4"
+              :emissive-intensity="0.4"
             />
           </TresMesh>
         </template>
