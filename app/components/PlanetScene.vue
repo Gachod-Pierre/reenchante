@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import { useGLTF } from "@tresjs/cientos";
 import * as THREE from "three";
-// import Stats from "three/examples/jsm/libs/stats.module.js";
+import Stats from "three/examples/jsm/libs/stats.module.js";
 
 const { state: gltf } = useGLTF("/models/earth-cartoon.glb");
 const canvasRef = ref();
@@ -10,11 +10,12 @@ const animationStarted = ref(false);
 let animationFrameId: number | null = null;
 let camera: THREE.PerspectiveCamera | THREE.Camera | null = null;
 let _raycaster: THREE.Raycaster | null = null;
-// let stats: InstanceType<typeof Stats> | null = null;
+let stats: InstanceType<typeof Stats> | null = null;
 
 const isDragging = ref(false);
 const isHoveringPlanet = ref(false);
-const previousMousePosition = ref({ x: 0, y: 0 });
+// ✅ NON-réactive pour éviter re-renders à chaque mousemove
+let previousMousePosition = { x: 0, y: 0 };
 // ⚠️ IMPORTANT: planetGroupRotation n'est utilisée QUE pour les binding Vue du template
 // La vraie rotation est gérée par la variable Three.js "planetGroupThreeObject" ci-dessous
 const planetGroupRotation = ref({ x: 0, y: 0 });
@@ -48,17 +49,17 @@ let lastHoveringPlanetState = false;
 // InstancedMesh pour les nuages (optimisation majeure: 200+ meshes → 1 seul)
 const cloudInstancedMesh = ref<THREE.InstancedMesh | null>(null);
 
-// Debug timing
-const debugTimings = ref({
+// ✅ Debug timing NON-réactif (mis à jour 60x/sec, ne doit pas trigger re-render)
+let debugTimings = {
   rotationUpdate: 0,
   pingScaleUpdate: 0,
   totalFrame: 0,
   mousemoveEvents: 0,
   lastFrameTime: performance.now(),
-});
+};
 
-// Computed style pour le canvas - évite les hydration mismatches
-const canvasStyle = computed(() => ({
+// ✅ Style statique (pas de computed pour éviter les recalculate style)
+const canvasStyle = {
   width: "100%",
   height: "100vh",
   backgroundColor: "#f4f4f4",
@@ -68,8 +69,7 @@ const canvasStyle = computed(() => ({
   userSelect: "none" as const,
   zIndex: 0,
   overflow: "hidden",
-  cursor: isHoveringPlanet.value ? "grab" : "default",
-}));
+};
 
 // Fonction pour créer plusieurs arcs en ciel avec des couleurs distinctes
 const createRainbowArcs = (): Array<{
@@ -692,23 +692,22 @@ const startAnimation = () => {
       planetGroupThreeObject.rotation.x = planetGroupRotationX;
       planetGroupThreeObject.rotation.y = planetGroupRotationY;
     }
-
-    debugTimings.value.rotationUpdate = performance.now() - rotStart;
+    debugTimings.rotationUpdate = performance.now() - rotStart;
 
     // ✅ Ping visual feedback est maintenant juste en changeant la couleur/emissive (pas de scale animé)
     // Les pings sont mis à jour visuellement via le template reactive binding au lieu de faire l'animation ici
-    debugTimings.value.pingScaleUpdate = 0;
+    debugTimings.pingScaleUpdate = 0;
 
-    debugTimings.value.totalFrame = performance.now() - frameStart;
-    debugTimings.value.lastFrameTime = performance.now();
+    debugTimings.totalFrame = performance.now() - frameStart;
+    debugTimings.lastFrameTime = performance.now();
 
     // Debug logs disabled for performance
-    debugTimings.value.mousemoveEvents = 0; // Reset counter
+    debugTimings.mousemoveEvents = 0; // Reset counter
   };
 
   // Lancer le loop d'animation
   const animate = () => {
-    // stats?.update();
+    stats?.update();
     renderLoopCallback?.();
     animationFrameId = requestAnimationFrame(animate);
   };
@@ -721,11 +720,11 @@ const handleMouseDown = (e: MouseEvent) => {
   if (!isHoveringPlanet.value) return;
 
   isDragging.value = true;
-  previousMousePosition.value = { x: e.clientX, y: e.clientY };
+  previousMousePosition = { x: e.clientX, y: e.clientY };
 };
 
 const handleMouseMove = (e: MouseEvent) => {
-  debugTimings.value.mousemoveEvents += 1;
+  debugTimings.mousemoveEvents += 1;
 
   // THROTTLE: Limiter à ~60fps
   const now = Date.now();
@@ -777,15 +776,15 @@ const handleMouseMove = (e: MouseEvent) => {
   if (!isDragging.value) return;
 
   // Calculs pour la rotation (seulement si en drag)
-  const deltaX = e.clientX - previousMousePosition.value.x;
-  const deltaY = e.clientY - previousMousePosition.value.y;
+  const deltaX = e.clientX - previousMousePosition.x;
+  const deltaY = e.clientY - previousMousePosition.y;
 
   // ✅ JUSTE STOCKER les deltas - les appliquer dans le render loop
   // Cela découple complètement le mousemove du rendering
   pendingDeltaX = deltaX;
   pendingDeltaY = deltaY;
 
-  previousMousePosition.value = { x: e.clientX, y: e.clientY };
+  previousMousePosition = { x: e.clientX, y: e.clientY };
 
   const distTime = performance.now() - distStart;
   if (distTime > 2) {
@@ -866,13 +865,13 @@ onMounted(() => {
   // Initialiser le raycaster
   _raycaster = new THREE.Raycaster();
 
-  // // Initialiser Stats widget pour le monitoring FPS
-  // stats = new Stats();
-  // stats.domElement.style.position = "fixed";
-  // stats.domElement.style.top = "10px";
-  // stats.domElement.style.left = "10px";
-  // stats.domElement.style.zIndex = "1000";
-  // document.body.appendChild(stats.domElement);
+  // Initialiser Stats widget pour le monitoring FPS
+  stats = new Stats();
+  stats.domElement.style.position = "fixed";
+  stats.domElement.style.top = "10px";
+  stats.domElement.style.left = "10px";
+  stats.domElement.style.zIndex = "1000";
+  document.body.appendChild(stats.domElement);
 
   // Pré-cacher le rect du canvas (une seule fois au setup)
   const canvas = canvasRef.value?.querySelector("canvas");
@@ -955,11 +954,11 @@ onUnmounted(() => {
   }
   renderLoopCallback = null;
 
-  // // Retirer le widget Stats
-  // if (stats && stats.domElement && stats.domElement.parentNode) {
-  //   stats.domElement.parentNode.removeChild(stats.domElement);
-  //   stats = null;
-  // }
+  // Retirer le widget Stats
+  if (stats && stats.domElement && stats.domElement.parentNode) {
+    stats.domElement.parentNode.removeChild(stats.domElement);
+    stats = null;
+  }
 
   // Disposer les géométries des arcs
   rainbowArcs.value.forEach((arc) => {
@@ -988,7 +987,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="canvasRef" :style="canvasStyle">
+  <div
+    ref="canvasRef"
+    :style="[canvasStyle, { cursor: isHoveringPlanet ? 'grab' : 'default' }]"
+  >
     <!-- Titre en haut à gauche -->
     <h1
       class="fixed left-5 md:left-8 lg:left-10 z-50 m-0 text-[3rem] md:text-[4.5rem] lg:text-[6rem] font-black top-24 md:top-8 lg:top-10 bg-clip-text text-transparent"
