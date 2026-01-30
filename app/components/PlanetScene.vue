@@ -2,13 +2,22 @@
 import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import { useGLTF } from "@tresjs/cientos";
 import * as THREE from "three";
+import { useSceneAnimation } from "../composables/useSceneAnimation";
 
 const { state: gltf } = useGLTF("/models/earth-cartoon.glb");
 const canvasRef = ref();
-const animationStarted = ref(false);
-let animationFrameId: number | null = null;
-let camera: THREE.PerspectiveCamera | THREE.Camera | null = null;
-let _raycaster: THREE.Raycaster | null = null;
+
+// ✅ Utiliser le composable pour l'animation
+const {
+  sunOpacity,
+  rainbowOpacity,
+  cloudsOpacity,
+  pingsOpacity,
+  startAnimation: startSceneAnimation,
+  stopAnimation: stopSceneAnimation,
+  getRenderLoopCallback,
+  setAnimationFrameId,
+} = useSceneAnimation();
 
 const isDragging = ref(false);
 const isHoveringPlanet = ref(false);
@@ -33,15 +42,6 @@ let planetGroupRotationY = 0;
 // ✅ Variables NON-réactives pour la rotation rapide (pas de Vue reactivity overhead)
 let pendingDeltaX = 0;
 let pendingDeltaY = 0;
-
-// Refs pour accès direct aux meshes Three.js (évite la réactivité Vue)
-const pingMeshRefs = new Map<string, THREE.Mesh>();
-let cachedCanvasRect: DOMRect | null = null;
-let lastMouseMoveTime = 0;
-const MOUSE_THROTTLE_MS = 16; // ~60fps event throttle
-
-// Cache pour éviter les mises à jour réactives Vue trop fréquentes
-let lastHoveringPlanetState = false;
 
 // InstancedMesh pour les nuages (optimisation majeure: 200+ meshes → 1 seul)
 const cloudInstancedMesh = ref<THREE.InstancedMesh | null>(null);
@@ -657,16 +657,24 @@ const hoverRadius = computed(() => {
   return windowWidth.value < 768 ? 400 : 500;
 });
 
-// Variables pour le render loop
-let renderLoopCallback: (() => void) | null = null;
+// ✅ Autres variables nécessaires pour le rendering
+let camera: THREE.PerspectiveCamera | THREE.Camera | null = null;
+let _raycaster: THREE.Raycaster | null = null;
+let lastHoveringPlanetState = false;
+const pingMeshRefs = new Map<string, THREE.Mesh>();
+let cachedCanvasRect: DOMRect | null = null;
+let lastMouseMoveTime = 0;
+const MOUSE_THROTTLE_MS = 16;
+const animationStarted = ref(false);
 
-const startAnimation = () => {
-  if (animationStarted.value || animationFrameId !== null) return;
+// ✅ Fonction pour démarrer l'animation avec la boucle de rotation
+const startAnimationLoop = () => {
+  if (animationStarted.value) return;
   animationStarted.value = true;
 
-  // Créer la callback d'animation
-  renderLoopCallback = () => {
-    const frameStart = performance.now();
+  // ✅ Utiliser le composable pour initialiser l'animation
+  startSceneAnimation(gltf.value, (_elapsedTime, _progress) => {
+    // Callback de la boucle d'animation - gère la rotation et autres updates
 
     // TIMING 1: Rotation update - DIRECTEMENT sur le Three.js object, pas de Vue reactivity!
     const rotStart = performance.now();
@@ -675,8 +683,6 @@ const startAnimation = () => {
     planetGroupRotationY += 0.0005;
 
     // ✅ Appliquer les deltas accumulés depuis les mousemove events
-    // deltaX (horizontal mouse movement) contrôle la rotation Y (axe vertical)
-    // deltaY (vertical mouse movement) contrôle la rotation X (axe horizontal)
     planetGroupRotationY += pendingDeltaX * 0.0015;
     planetGroupRotationX += pendingDeltaY * 0.0015;
 
@@ -684,31 +690,22 @@ const startAnimation = () => {
     pendingDeltaX *= 0.95;
     pendingDeltaY *= 0.95;
 
-    // ✅ Mettre à jour directement le Three.js object (pas de Vue reactivity!)
+    // ✅ Mettre à jour directement le Three.js object
     if (planetGroupThreeObject) {
       planetGroupThreeObject.rotation.x = planetGroupRotationX;
       planetGroupThreeObject.rotation.y = planetGroupRotationY;
     }
     debugTimings.rotationUpdate = performance.now() - rotStart;
+  });
 
-    // ✅ Ping visual feedback est maintenant juste en changeant la couleur/emissive (pas de scale animé)
-    // Les pings sont mis à jour visuellement via le template reactive binding au lieu de faire l'animation ici
-    debugTimings.pingScaleUpdate = 0;
-
-    debugTimings.totalFrame = performance.now() - frameStart;
-    debugTimings.lastFrameTime = performance.now();
-
-    // Debug logs disabled for performance
-    debugTimings.mousemoveEvents = 0; // Reset counter
-  };
-
-  // Lancer le loop d'animation
+  // Lancer la boucle d'animation
   const animate = () => {
-    renderLoopCallback?.();
-    animationFrameId = requestAnimationFrame(animate);
+    const callback = getRenderLoopCallback();
+    callback?.();
+    setAnimationFrameId(requestAnimationFrame(animate));
   };
 
-  animationFrameId = requestAnimationFrame(animate);
+  setAnimationFrameId(requestAnimationFrame(animate));
 };
 
 const handleMouseDown = (e: MouseEvent) => {
@@ -914,7 +911,7 @@ onMounted(async () => {
     () => gltf.value?.scene,
     (scene) => {
       if (scene && !animationStarted.value) {
-        startAnimation();
+        startAnimationLoop();
       }
     },
     { immediate: true, deep: true },
@@ -935,12 +932,8 @@ watch(
 );
 
 onUnmounted(() => {
-  // Arrêter l'animation frame
-  if (animationFrameId !== null) {
-    cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
-  }
-  renderLoopCallback = null;
+  // Arrêter l'animation
+  stopSceneAnimation();
 
   // Disposer les géométries des arcs
   rainbowArcs.value.forEach((arc) => {
@@ -979,17 +972,29 @@ onUnmounted(() => {
       :style="{
         backgroundImage:
           'linear-gradient(90deg, #FF69B4, #FF1493, #C71585, #D94C8A, #FF1493, #FF69B4)',
+        opacity: sunOpacity,
+        transition: 'opacity 0.3s ease-out',
       }"
     >
       Réenchante<br />le Monde
     </h1>
 
-    <TresCanvas alpha :clear-alpha="0" clear-color="#000000" antialias>
+    <TresCanvas
+      ref="canvasThreeRef"
+      alpha
+      :clear-alpha="0"
+      clear-color="#000000"
+      antialias
+    >
       <TresPerspectiveCamera
         ref="cameraRef"
         :position="[0, 2, 10]"
         :fov="50"
-        @update="(c: any) => (camera = c)"
+        @update="
+          (c: any) => {
+            camera = c;
+          }
+        "
       />
       <TresAmbientLight :intensity="2" />
       <TresDirectionalLight :position="[10, 10, 10]" :intensity="2" />
@@ -1000,8 +1005,10 @@ onUnmounted(() => {
         <TresMeshStandardMaterial
           color="#ffff00"
           emissive="#ffff00"
-          :emissive-intensity="3"
+          :emissive-intensity="3 * sunOpacity"
           :tone-mapped="false"
+          transparent
+          :opacity="sunOpacity"
         />
       </TresMesh>
 
@@ -1015,7 +1022,7 @@ onUnmounted(() => {
         <TresMeshBasicMaterial
           color="#ffff00"
           transparent
-          :opacity="0.8"
+          :opacity="0.8 * sunOpacity"
           :depth-write="false"
           :depth-test="true"
         />
@@ -1031,7 +1038,9 @@ onUnmounted(() => {
           <TresMeshStandardMaterial
             :color="arc.color"
             emissive="#ffffff"
-            :emissive-intensity="0.3"
+            :emissive-intensity="0.3 * rainbowOpacity"
+            transparent
+            :opacity="rainbowOpacity"
           />
         </TresMesh>
       </template>
@@ -1044,7 +1053,7 @@ onUnmounted(() => {
           <TresMeshStandardMaterial
             color="#ffffff"
             transparent
-            :opacity="cloud.opacity"
+            :opacity="cloud.opacity * cloudsOpacity"
           />
         </TresMesh>
       </template>
@@ -1082,7 +1091,9 @@ onUnmounted(() => {
             <TresMeshStandardMaterial
               color="#ff69b4"
               emissive="#ff1493"
-              :emissive-intensity="0.4"
+              :emissive-intensity="0.4 * pingsOpacity"
+              transparent
+              :opacity="pingsOpacity"
             />
           </TresMesh>
         </template>
