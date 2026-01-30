@@ -68,6 +68,7 @@ export type Database = {
       user_deeds: {
         Row: {
           ai_score: number | null
+          country: string
           evidence_url: string | null
           good_deed_id: string
           id: string
@@ -83,6 +84,7 @@ export type Database = {
         }
         Insert: {
           ai_score?: number | null
+          country?: string
           evidence_url?: string | null
           good_deed_id: string
           id?: string
@@ -98,6 +100,7 @@ export type Database = {
         }
         Update: {
           ai_score?: number | null
+          country?: string
           evidence_url?: string | null
           good_deed_id?: string
           id?: string

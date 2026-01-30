@@ -9,6 +9,8 @@ import { usePingGenerator } from "../composables/usePingGenerator";
 import { useInteractionHandlers } from "../composables/useInteractionHandlers";
 import { useCloudGenerator } from "../composables/useCloudGenerator";
 import { useCloudInstancedMesh } from "../composables/useCloudInstancedMesh";
+import { useUserDeedsByContinent } from "../composables/useUserDeedsByContinent";
+import ContinentOverlay from "./ContinentOverlay.vue";
 
 const { state: gltf } = useGLTF("/models/earth-cartoon.glb");
 const canvasRef = ref();
@@ -40,6 +42,16 @@ const {
 
 // ✅ Pings composable
 const { pings, updatePings } = usePingGenerator();
+
+// ✅ User deeds composable pour l'overlay
+const {
+  userDeeds,
+  loading: deedsLoading,
+  fetchUserDeedsForContinent,
+} = useUserDeedsByContinent();
+const selectedContinentId = ref<string | null>(null);
+const isOverlayOpen = ref(false);
+let isLoadingDeeds = false;
 
 // ✅ Interaction handlers composable
 const {
@@ -232,11 +244,20 @@ const handlePingHover = (pingId: string, isHovering: boolean) => {
 };
 
 const handlePingClick = (pingId: string) => {
+  // Éviter les clics multiples pendant le chargement
+  if (isLoadingDeeds) return;
+
   const ping = pings.value.find((p) => p.id === pingId);
   if (ping) {
-    console.log(
-      `Clicked on ${ping.continent} ping with ${ping.actionCount} actions`,
-    );
+    // Ouvrir l'overlay
+    selectedContinentId.value = pingId;
+    isOverlayOpen.value = true;
+    isLoadingDeeds = true;
+
+    // Récupérer les données
+    fetchUserDeedsForContinent(pingId).finally(() => {
+      isLoadingDeeds = false;
+    });
   }
 };
 
@@ -398,5 +419,14 @@ onUnmounted(() => {
         </template>
       </TresGroup>
     </TresCanvas>
+
+    <!-- Overlay des soumissions par continent -->
+    <ContinentOverlay
+      :is-open="isOverlayOpen"
+      :continent-id="selectedContinentId"
+      :user-deeds="userDeeds"
+      :loading="deedsLoading"
+      @close="isOverlayOpen = false"
+    />
   </div>
 </template>
