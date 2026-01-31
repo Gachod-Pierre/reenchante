@@ -51,7 +51,21 @@ const {
 } = useUserDeedsByContinent();
 const selectedContinentId = ref<string | null>(null);
 const isOverlayOpen = ref(false);
+const hoveredPingId = ref<string | null>(null);
+const mouseX = ref(0);
+const mouseY = ref(0);
 let isLoadingDeeds = false;
+
+// Mapping des IDs de continents aux noms
+const continentNames: Record<string, string> = {
+  africa: "Afrique",
+  antarctica: "Antarctique",
+  asia: "Asie",
+  europe: "Europe",
+  "north-america": "Amérique du Nord",
+  oceania: "Océanie",
+  "south-america": "Amérique du Sud",
+};
 
 // ✅ Interaction handlers composable
 const {
@@ -72,6 +86,7 @@ initializeClouds();
 // ✅ Cloud InstancedMesh composable
 const { initialize: initCloudInstancedMesh } = useCloudInstancedMesh();
 const cloudInstancedMesh = ref<THREE.InstancedMesh | null>(null);
+const canvasThreeRef = ref<any>(null);
 
 // ✅ Planet group ref
 const planetGroupRef = ref<THREE.Group | null>(null);
@@ -105,6 +120,10 @@ const sunPosition = computed((): [number, number, number] => {
 let camera: THREE.PerspectiveCamera | THREE.Camera | null = null;
 let _raycaster: THREE.Raycaster | null = null;
 const pingMeshRefs = new Map<string, THREE.Mesh>();
+
+// Références aux handlers pour pouvoir les supprimer correctement
+let resizeHandler: (() => void) | null = null;
+let mouseMoveHandler: ((e: MouseEvent) => void) | null = null;
 
 // Mettre à jour les pings quand la planète change de scale
 watch(windowWidth, (newWidth) => {
@@ -186,15 +205,22 @@ onMounted(async () => {
   }
 
   // Écouter les changements de taille de la fenêtre
-  const handleResize = () => {
+  resizeHandler = () => {
     windowWidth.value = window.innerWidth;
   };
 
-  window.addEventListener("resize", handleResize);
+  mouseMoveHandler = (e: MouseEvent) => {
+    mouseX.value = e.clientX;
+    mouseY.value = e.clientY;
+  };
+
+  window.addEventListener("resize", resizeHandler);
+  window.addEventListener("mousemove", mouseMoveHandler);
 
   // Initialiser le cloud mesh
   cloudInstancedMesh.value = initCloudInstancedMesh(clouds.value);
 
+  // ✅ Ajouter le InstancedMesh à la scène
   // ✅ Watch pour capturer la référence Three.js du planetGroup et initialiser la rotation
   watch(
     () => planetGroupRef.value,
@@ -231,7 +257,9 @@ onMounted(async () => {
 
   // Cleanup au démount
   return () => {
-    window.removeEventListener("resize", handleResize);
+    if (resizeHandler) window.removeEventListener("resize", resizeHandler);
+    if (mouseMoveHandler)
+      window.removeEventListener("mousemove", mouseMoveHandler);
   };
 });
 
@@ -241,6 +269,8 @@ const handlePingHover = (pingId: string, isHovering: boolean) => {
   if (mesh && mesh.material instanceof THREE.MeshStandardMaterial) {
     mesh.material.emissiveIntensity = isHovering ? 1.2 : 0.4;
   }
+  // Mettre à jour l'état du hover pour afficher la card
+  hoveredPingId.value = isHovering ? pingId : null;
 };
 
 const handlePingClick = (pingId: string) => {
@@ -275,6 +305,11 @@ onUnmounted(() => {
     container.removeEventListener("mouseleave", handleMouseUp);
     container.removeEventListener("touchend", handleMouseUp);
   }
+
+  // Nettoyer les event listeners globaux
+  if (resizeHandler) window.removeEventListener("resize", resizeHandler);
+  if (mouseMoveHandler)
+    window.removeEventListener("mousemove", mouseMoveHandler);
 
   // Nettoyer les refs
   pingMeshRefs.clear();
@@ -365,13 +400,12 @@ onUnmounted(() => {
         </TresMesh>
       </template>
 
-      <!-- ✅ OPTIMISATION: InstancedMesh unique pour tous les nuages (200+ meshes → 1) -->
-      <!-- Nuages générés procéduralement -->
+      <!-- ✅ Nuages générés procéduralement -->
       <template v-for="(cloud, index) in clouds" :key="`cloud-${index}`">
         <TresMesh :position="cloud.position" :rotation="cloud.rotation">
           <TresIcosahedronGeometry :args="[cloud.scale, 0]" />
           <TresMeshStandardMaterial
-            color="#ffffff"
+            :color="cloud.color || '#ffffff'"
             transparent
             :opacity="cloud.opacity * cloudsOpacity"
           />
@@ -428,5 +462,19 @@ onUnmounted(() => {
       :loading="deedsLoading"
       @close="isOverlayOpen = false"
     />
+
+    <!-- Card hover pour afficher le nom du continent -->
+    <transition name="fade">
+      <div
+        v-if="hoveredPingId"
+        class="fixed bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg text-sm font-semibold text-gray-800 pointer-events-none z-40 whitespace-nowrap"
+        :style="{
+          left: mouseX + 12 + 'px',
+          top: mouseY + 12 + 'px',
+        }"
+      >
+        {{ continentNames[hoveredPingId] || hoveredPingId }}
+      </div>
+    </transition>
   </div>
 </template>
