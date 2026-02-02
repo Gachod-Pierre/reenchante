@@ -4,9 +4,10 @@ import { useRoute } from "vue-router";
 
 const route = useRoute();
 const scrollY = ref(0);
-const isHeaderHidden = ref(false);
+const isHeaderHidden = ref(true); // Commencer caché au démarrage
 const isHovering = ref(false);
 const isMenuOpen = ref(false);
+const isInitialized = ref(false); // Flag pour différencier init du scroll
 
 // Distance de scroll avant de cacher le header
 const SCROLL_THRESHOLD = 100;
@@ -33,6 +34,12 @@ const toggleMenu = () => {
 
 onMounted(() => {
   window.addEventListener("scroll", handleScroll);
+  
+  // Animation d'entrée : afficher le header après 300ms
+  setTimeout(() => {
+    isInitialized.value = true;
+    isHeaderHidden.value = false;
+  }, 300);
 });
 
 onUnmounted(() => {
@@ -43,6 +50,13 @@ onUnmounted(() => {
 const shouldShowHeader = computed(
   () => !isHeaderHidden.value || isHovering.value,
 );
+
+// Calculer le translateY en fonction de l'état
+const headerTransform = computed(() => {
+  if (shouldShowHeader.value) return "translateY(0)";
+  if (!isInitialized.value) return "translateY(-150%)"; // Complètement caché à l'init
+  return "translateY(-100%)"; // Partiellement caché au scroll
+});
 
 // Fonction pour vérifier si un lien est actif
 const isLinkActive = (path: string) => {
@@ -59,8 +73,10 @@ const isLinkActive = (path: string) => {
     <!-- DESKTOP: Bulle ovale du header -->
     <div
       class="hidden lg:flex items-center justify-center mt-6 px-8 py-4 ml-auto mr-4 bg-[#ff69b4] rounded-full w-fit transition-transform duration-300 ease-in-out"
-      :class="shouldShowHeader ? 'translate-y-0' : '-translate-y-full'"
-      style="will-change: transform"
+      :style="{
+        'will-change': 'transform',
+        transform: headerTransform,
+      }"
     >
       <nav class="flex items-center gap-8">
         <NuxtLink
