@@ -8,6 +8,7 @@ const isHeaderHidden = ref(true); // Commencer caché au démarrage
 const isHovering = ref(false);
 const isMenuOpen = ref(false);
 const isInitialized = ref(false); // Flag pour différencier init du scroll
+const isMobile = ref(false);
 
 // Distance de scroll avant de cacher le header
 const SCROLL_THRESHOLD = 100;
@@ -33,6 +34,7 @@ const toggleMenu = () => {
 };
 
 onMounted(() => {
+  isMobile.value = window.innerWidth < 1024;
   window.addEventListener("scroll", handleScroll);
 
   // Animation d'entrée : afficher le header après 300ms
@@ -189,7 +191,11 @@ const isLinkActive = (path: string) => {
       <button
         class="fixed top-6 right-6 p-2 text-white text-2xl flex items-center justify-center z-50 transition-opacity duration-300"
         :style="
-          shouldShowHeader ? 'opacity: 1' : 'opacity: 0; pointer-events: none'
+          isMobile
+            ? 'opacity: 1; pointer-events: auto'
+            : shouldShowHeader
+              ? 'opacity: 1'
+              : 'opacity: 0; pointer-events: none'
         "
         @click="toggleMenu"
       >

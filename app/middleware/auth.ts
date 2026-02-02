@@ -7,7 +7,7 @@ export default defineNuxtRouteMiddleware(async () => {
     if (!user) {
       return navigateTo("/login");
     }
-  } catch (error) {
+  } catch {
     // Fallback en cas de problème SSR
     return navigateTo("/login");
   }
