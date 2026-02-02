@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from "vue";
 import { useGLTF } from "@tresjs/cientos";
 import * as THREE from "three";
+import gsap from "gsap";
 import { useSceneAnimation } from "../composables/useSceneAnimation";
 import { usePlanetRotation } from "../composables/usePlanetRotation";
 import { useRainbowArcs } from "../composables/useRainbowArcs";
@@ -119,6 +120,11 @@ const sunPosition = computed((): [number, number, number] => {
 
 // Hover radius is set dynamically in the interaction handler
 
+// ✅ Refs pour l'animation du titre
+const titleRef = ref<HTMLElement | null>(null);
+const line1Letters = ref("Réenchante".split(""));
+const line2Letters = ref("le Monde".split(""));
+
 // ✅ Autres variables nécessaires pour le rendering
 let camera: THREE.PerspectiveCamera | null;
 let _raycaster: THREE.Raycaster | null = null;
@@ -137,6 +143,20 @@ watch(windowWidth, (newWidth) => {
 });
 
 onMounted(async () => {
+  // ✅ Animer le titre avec GSAP
+  await nextTick();
+  const spans = titleRef.value?.querySelectorAll("span") || [];
+  
+  const tl = gsap.timeline();
+  
+  tl.to(spans, {
+    opacity: 1,
+    y: 0,
+    stagger: 0.08,
+    duration: 0.6,
+    ease: "back.out(1.7)",
+  });
+
   // Initialiser les pings avec le scale initial
   const initialScale = windowWidth.value < 768 ? 3 : 5;
   updatePings(initialScale);
@@ -326,15 +346,31 @@ onUnmounted(() => {
   >
     <!-- Titre en haut à gauche -->
     <h1
-      class="fixed left-5 md:left-8 lg:left-10 z-50 m-0 text-[3rem] md:text-[4.5rem] lg:text-[6rem] font-black top-24 md:top-8 lg:top-10 bg-clip-text text-transparent leading-[1.1]"
+      ref="titleRef"
+      class="fixed left-5 md:left-8 lg:left-10 z-50 m-0 text-[3rem] md:text-[4.5rem] lg:text-[6rem] font-black top-24 md:top-8 lg:top-10 leading-[1.1]"
       :style="{
-        backgroundImage:
-          'linear-gradient(90deg, #FF69B4, #FF1493, #C71585, #D94C8A, #FF1493, #FF69B4)',
-        opacity: sunOpacity,
-        transition: 'opacity 0.3s ease-out',
+        color: '#FF1493',
+        textShadow: '0 0 20px rgba(255, 105, 180, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.3)',
       }"
     >
-      Réenchante<br >le Monde
+      <div>
+        <span
+          v-for="(letter, index) in line1Letters"
+          :key="`l1-${index}`"
+          class="inline-block opacity-0 translate-y-10"
+        >
+          {{ letter }}
+        </span>
+      </div>
+      <div>
+        <span
+          v-for="(letter, index) in line2Letters"
+          :key="`l2-${index}`"
+          class="inline-block opacity-0 translate-y-10"
+        >
+          {{ letter }}
+        </span>
+      </div>
     </h1>
 
     <TresCanvas
