@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ middleware: ["auth"] });
+
 import type { Database } from "../types/database.types";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -21,7 +23,7 @@ if (error) console.error(error);
     <ul style="list-style: none; padding: 0">
       <li
         v-for="(r, index) in rows as Profile[] | null"
-        :key="r?.username"
+        :key="r?.username ?? r?.id"
         style="
           display: flex;
           align-items: center;

@@ -1,17 +1,17 @@
 <script setup lang="ts">
-definePageMeta({ ssr: false })
+definePageMeta({ ssr: false });
 
-const user = useSupabaseUser()
+const user = useSupabaseUser();
 
 watch(
   user,
   () => {
     if (user.value) {
-      return navigateTo("/dashboard")
+      return navigateTo("/dashboard");
     }
   },
-  { immediate: true }
-)
+  { immediate: true },
+);
 </script>
 
 <template>

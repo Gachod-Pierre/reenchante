@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import type { Database } from "../types/database.types";
 
+definePageMeta({ middleware: ["auth"] });
+
 type GoodDeed = Database["public"]["Tables"]["good_deeds"]["Row"];
 type UserDeed = Database["public"]["Tables"]["user_deeds"]["Insert"];
 
 const supabase = useSupabaseClient<Database>();
 const user = useSupabaseUser();
 const showDailyLimitModal = ref(false);
+const hasReachedDailyLimit = ref(false);
 const modalType = ref<"limit-in-progress" | "limit-daily-5" | "success">(
   "success",
 );
@@ -66,6 +69,7 @@ onMounted(async () => {
         .gte("validated_at", today.toISOString());
 
       if ((validatedCount_val ?? 0) >= 5) {
+        hasReachedDailyLimit.value = true;
         showDailyLimitModal.value = true;
         modalType.value = "limit-daily-5";
       }
@@ -226,23 +230,29 @@ const pageStyle = {
 
             <!-- Bouton Ajouter -->
             <button
-              :disabled="!user"
+              :disabled="!user || hasReachedDailyLimit"
               class="w-full py-2 px-4 rounded-lg font-semibold transition-all duration-300 transform text-white text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
               :class="[
-                user
-                  ? 'bg-[#FF1493] hover:bg-[#D9187F] hover:shadow-lg hover:scale-105'
-                  : 'bg-gray-300',
+                !user || hasReachedDailyLimit
+                  ? 'bg-gray-300'
+                  : 'bg-[#FF1493] hover:bg-[#D9187F] hover:shadow-lg hover:scale-105',
               ]"
               @click="d?.id && addDeed(d.id)"
             >
-              {{ user ? "Ajouter" : "Connecte-toi" }}
+              {{
+                !user
+                  ? "Connecte-toi"
+                  : hasReachedDailyLimit
+                    ? "Limite atteinte"
+                    : "Ajouter"
+              }}
             </button>
           </div>
         </div>
 
         <!-- Message si aucune action disponible -->
         <div
-          v-if="deeds?.length === 0 && allDeeds?.length > 0"
+          v-if="allDeeds && deeds?.length === 0 && allDeeds.length > 0"
           class="mt-12 text-center py-12"
         >
           <p class="text-2xl font-bold mb-2" :style="{ color: '#FF1493' }">
