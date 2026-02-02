@@ -34,7 +34,7 @@ const toggleMenu = () => {
 
 onMounted(() => {
   window.addEventListener("scroll", handleScroll);
-  
+
   // Animation d'entrée : afficher le header après 300ms
   setTimeout(() => {
     isInitialized.value = true;

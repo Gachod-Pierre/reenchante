@@ -54,22 +54,32 @@ const getAvatarUrl = (url: string | null | undefined): string => {
     >
       <!-- Header -->
       <div
-        class="bg-white border-b px-6 py-4 flex justify-between items-center flex-shrink-0"
+        class="bg-white border-b px-6 py-4 flex flex-col gap-3 flex-shrink-0"
       >
-        <h2
-          class="text-2xl font-bold text-transparent bg-clip-text"
-          :style="{
-            backgroundImage: 'linear-gradient(90deg, #FF69B4, #FF1493)',
-          }"
-        >
-          {{ continentName }}
-        </h2>
-        <button
-          class="text-gray-500 hover:text-gray-700 text-2xl"
+        <div class="flex justify-between items-center">
+          <h2
+            class="text-2xl font-bold text-transparent bg-clip-text"
+            :style="{
+              backgroundImage: 'linear-gradient(90deg, #FF69B4, #FF1493)',
+            }"
+          >
+            {{ continentName }}
+          </h2>
+          <button
+            class="text-gray-500 hover:text-gray-700 text-2xl"
+            @click="$emit('close')"
+          >
+            ✕
+          </button>
+        </div>
+        <NuxtLink
+          to="/actions"
+          class="text-white font-semibold py-2 px-4 rounded-lg hover:shadow-lg transition transform hover:scale-105 text-center w-full lg:w-fit"
+          :style="{ backgroundColor: '#FF1493' }"
           @click="$emit('close')"
         >
-          ✕
-        </button>
+          ✨ Réenchanter le monde ✨
+        </NuxtLink>
       </div>
 
       <!-- Contenu -->
