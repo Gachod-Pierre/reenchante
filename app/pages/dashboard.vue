@@ -84,13 +84,97 @@ const { data: validatedDeeds } = await useAsyncData(
 const { data: userProfile } = await useAsyncData("userProfile", async () => {
   const { data, error } = await supabase
     .from("profiles")
-    .select("total_points")
+    .select("total_points,username,avatar_url")
     .eq("id", userId!)
     .single();
 
   if (error) throw error;
   return data;
 });
+
+// État pour l'édition du profil
+const isEditingProfile = ref(false);
+const editedUsername = ref("");
+const editedAvatarUrl = ref("");
+const isUploadingAvatar = ref(false);
+
+// Initialiser les valeurs d'édition quand le profil se charge
+watch(userProfile, (newProfile) => {
+  if (newProfile) {
+    editedUsername.value = newProfile.username || "";
+    editedAvatarUrl.value = newProfile.avatar_url || "";
+  }
+});
+
+// Réinitialiser les valeurs quand on rentre en édition
+function enterEditMode() {
+  editedUsername.value = userProfile.value?.username || "";
+  editedAvatarUrl.value = userProfile.value?.avatar_url || "";
+  isEditingProfile.value = true;
+}
+
+async function handleAvatarUpload(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  isUploadingAvatar.value = true;
+  try {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${userId}-avatar.${fileExt}`;
+
+    console.log("🔄 Uploading avatar:", {
+      fileName,
+      userId,
+      fileSize: file.size,
+      fileType: file.type,
+    });
+
+    // Essayer d'abord sans upsert
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, file, { upsert: true });
+
+    if (uploadError) {
+      console.error("❌ Upload error:", uploadError);
+      throw uploadError;
+    }
+
+    console.log("✅ Upload successful");
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("avatars").getPublicUrl(fileName);
+
+    console.log("🖼️ Public URL:", publicUrl);
+    editedAvatarUrl.value = publicUrl;
+  } catch (error) {
+    console.error("💥 Full error:", error);
+    alert("Erreur lors de l'upload : " + (error as Error).message);
+  } finally {
+    isUploadingAvatar.value = false;
+  }
+}
+
+async function saveProfileChanges() {
+  try {
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        username: editedUsername.value,
+        avatar_url: editedAvatarUrl.value,
+      })
+      .eq("id", userId!);
+
+    if (error) throw error;
+
+    await refreshNuxtData("userProfile");
+    isEditingProfile.value = false;
+    alert("Profil mis à jour ✅");
+  } catch (error) {
+    alert("Erreur : " + (error as Error).message);
+  }
+}
 
 // Vérifier la limite quotidienne au montage
 onMounted(async () => {
@@ -158,37 +242,149 @@ const totalPages = computed(() => {
           Dashboard
         </h1>
 
-        <!-- Section Points de réenchantement -->
-        <div
-          class="mb-12 p-6 md:p-8 rounded-3xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl"
-          :style="{
-            borderColor: '#FF69B4',
-            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-          }"
-        >
+        <!-- Section Profil et Points combinée -->
+        <div class="mb-12 flex flex-col lg:flex-row gap-6">
+          <!-- Case 1: Infos Utilisateur + Bouton Déconnexion -->
           <div
-            class="flex flex-col md:flex-row md:items-center md:justify-between gap-6"
+            class="p-6 md:p-8 rounded-3xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl"
+            :style="{
+              borderColor: '#FF69B4',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            }"
           >
-            <div>
-              <h2
-                class="text-xl md:text-2xl font-bold mb-3"
-                :style="{ color: '#FF1493' }"
+            <div class="flex flex-col md:flex-row md:items-center gap-6">
+              <!-- Avatar -->
+              <div class="flex-shrink-0 relative">
+                <!-- Preview après upload en édition -->
+                <img
+                  v-if="editedAvatarUrl && isEditingProfile"
+                  :src="editedAvatarUrl"
+                  :alt="editedUsername || 'Avatar'"
+                  class="w-24 h-24 rounded-full object-cover border-2"
+                  :style="{ borderColor: '#FF69B4' }"
+                >
+                <!-- Avatar existant en mode lecture -->
+                <img
+                  v-else-if="userProfile?.avatar_url && !isEditingProfile"
+                  :src="userProfile.avatar_url"
+                  :alt="userProfile.username || 'Avatar'"
+                  class="w-24 h-24 rounded-full object-cover border-2"
+                  :style="{ borderColor: '#FF69B4' }"
+                >
+                <!-- Placeholder -->
+                <div
+                  v-else
+                  class="w-24 h-24 rounded-full flex items-center justify-center text-4xl font-black text-white"
+                  :style="{ backgroundColor: '#FF1493' }"
+                >
+                  {{ isEditingProfile ? "📸" : "✨" }}
+                </div>
+                <!-- Bouton pour changer l'avatar en édition -->
+                <label
+                  v-if="isEditingProfile"
+                  class="cursor-pointer absolute bottom-0 right-0"
+                >
+                  <div
+                    class="w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold text-white transition-all duration-300 hover:scale-110 bg-[#FF1493] border-2 border-white"
+                  >
+                    +
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    class="hidden"
+                    :disabled="isUploadingAvatar"
+                    @change="handleAvatarUpload"
+                  >
+                </label>
+              </div>
+
+              <!-- Infos et Bouton déconnexion -->
+              <div
+                class="flex-1 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
               >
-                Mes points de réenchantement
-              </h2>
-              <p
-                class="text-4xl md:text-5xl font-black"
-                :style="{ color: '#FF1493' }"
-              >
-                ✨ {{ userProfile?.total_points ?? 0 }} points
-              </p>
+                <div>
+                  <div v-if="!isEditingProfile">
+                    <h2
+                      class="text-2xl md:text-3xl font-black mb-2"
+                      :style="{ color: '#FF1493' }"
+                    >
+                      {{ userProfile?.username || "Utilisateur" }}
+                    </h2>
+                    <p class="text-gray-600 mb-4">{{ user?.email }}</p>
+                  </div>
+                  <div v-else class="mb-4">
+                    <label
+                      class="block text-sm font-semibold text-gray-700 mb-2"
+                    >
+                      Nom d'utilisateur
+                    </label>
+                    <input
+                      v-model="editedUsername"
+                      type="text"
+                      class="w-full px-4 py-2 border-2 rounded-lg focus:outline-none"
+                      :style="{ borderColor: '#FF69B4' }"
+                      placeholder="Votre nom d'utilisateur"
+                    >
+                  </div>
+
+                  <!-- Boutons d'action (Modifier/Enregistrer/Annuler) -->
+                  <div class="flex gap-2 flex-wrap">
+                    <button
+                      v-if="!isEditingProfile"
+                      class="px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold text-sm md:text-base text-white transition-all duration-300 hover:scale-105 bg-[#FF1493] hover:bg-[#D9187F]"
+                      @click="enterEditMode"
+                    >
+                      ✏️ Modifier
+                    </button>
+                    <template v-else>
+                      <button
+                        class="px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold text-sm md:text-base text-white transition-all duration-300 hover:scale-105 bg-[#FF1493] hover:bg-[#D9187F]"
+                        @click="saveProfileChanges"
+                      >
+                        💾 Enregistrer
+                      </button>
+                      <button
+                        class="px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold text-sm md:text-base text-white bg-gray-500 hover:bg-gray-600 transition-all duration-300 hover:scale-105"
+                        @click="isEditingProfile = false"
+                      >
+                        ✕ Annuler
+                      </button>
+                    </template>
+                  </div>
+                </div>
+
+                <!-- Bouton Se déconnecter -->
+                <button
+                  class="w-full sm:w-auto px-4 py-2 md:px-6 md:py-3 rounded-lg font-bold transition-all duration-300 hover:shadow-lg hover:scale-105 border-2 border-red-500 bg-transparent text-red-500 hover:bg-red-500 hover:text-white text-sm md:text-base"
+                  @click="signOut"
+                >
+                  Se déconnecter 😓
+                </button>
+              </div>
             </div>
-            <button
-              class="w-full md:w-auto px-6 py-3 md:px-8 md:py-4 rounded-lg font-bold transition-all duration-300 hover:shadow-lg hover:scale-105 border-2 border-red-500 bg-transparent text-red-500 hover:bg-red-600 hover:text-white"
-              @click="signOut"
+          </div>
+
+          <!-- Case 2: Points de réenchantement -->
+          <div
+            class="flex-1 p-6 md:p-8 rounded-3xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl"
+            :style="{
+              borderColor: '#FF69B4',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            }"
+          >
+            <h2
+              class="text-xl md:text-2xl font-bold mb-3"
+              :style="{ color: '#FF1493' }"
             >
-              Se déconnecter 😓
-            </button>
+              Mes points de réenchantement
+            </h2>
+            <p
+              class="text-4xl md:text-5xl font-black"
+              :style="{ color: '#FF1493' }"
+            >
+              ✨ {{ userProfile?.total_points ?? 0 }} points
+            </p>
           </div>
         </div>
 
