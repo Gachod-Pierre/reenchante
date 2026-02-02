@@ -32,6 +32,7 @@ const {
   getSunOscillationY,
   getCloudOscillationY,
   getPlanetEntranceSlideY,
+  animateTitleLetters,
 } = useSceneAnimation();
 
 // ✅ Rotation composable
@@ -145,17 +146,7 @@ watch(windowWidth, (newWidth) => {
 onMounted(async () => {
   // ✅ Animer le titre avec GSAP
   await nextTick();
-  const spans = titleRef.value?.querySelectorAll("span") || [];
-  
-  const tl = gsap.timeline();
-  
-  tl.to(spans, {
-    opacity: 1,
-    y: 0,
-    stagger: 0.08,
-    duration: 0.6,
-    ease: "back.out(1.7)",
-  });
+  animateTitleLetters(titleRef.value);
 
   // Initialiser les pings avec le scale initial
   const initialScale = windowWidth.value < 768 ? 3 : 5;
@@ -350,7 +341,8 @@ onUnmounted(() => {
       class="fixed left-5 md:left-8 lg:left-10 z-50 m-0 text-[3rem] md:text-[4.5rem] lg:text-[6rem] font-black top-24 md:top-8 lg:top-10 leading-[1.1]"
       :style="{
         color: '#FF1493',
-        textShadow: '0 0 20px rgba(255, 105, 180, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.3)',
+        textShadow:
+          '0 0 20px rgba(255, 105, 180, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.3)',
       }"
     >
       <div>

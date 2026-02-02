@@ -1,5 +1,6 @@
 import { ref, computed } from "vue";
 import * as THREE from "three";
+import gsap from "gsap";
 
 export function useSceneAnimation() {
   // ✅ Variables réactives pour les animations d'entrée (fade in)
@@ -170,6 +171,21 @@ export function useSceneAnimation() {
 
       const slideDistance = -1.5; // La planète commence 1.5 unités plus bas
       return slideDistance * (1 - easedProgress); // De -1.5 vers 0
+    },
+    // ✅ Animation du titre letter-by-letter avec GSAP
+    animateTitleLetters: (titleRef: HTMLElement | null) => {
+      if (!titleRef) return;
+
+      const spans = titleRef.querySelectorAll("span") || [];
+      const tl = gsap.timeline();
+
+      tl.to(spans, {
+        opacity: 1,
+        y: 0,
+        stagger: 0.08,
+        duration: 0.6,
+        ease: "back.out(1.7)",
+      });
     },
   };
 }
