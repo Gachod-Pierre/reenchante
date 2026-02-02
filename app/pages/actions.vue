@@ -152,23 +152,21 @@ const pageStyle = {
 
 <template>
   <div :style="pageStyle" class="relative">
-    <!-- Titre principal -->
-    <div class="fixed left-5 md:left-8 lg:left-10 top-8 lg:top-10 z-40">
-      <h1
-        class="text-3xl md:text-4xl lg:text-5xl font-black leading-tight max-w-xs lg:max-w-none"
-        :style="{
-          color: '#FF1493',
-          textShadow:
-            '0 0 20px rgba(255, 105, 180, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.3)',
-        }"
-      >
-        Bonnes actions
-      </h1>
-    </div>
-
     <!-- Contenu principal avec padding pour le header -->
-    <div class="pt-40 px-4 md:px-8 lg:px-12 pb-12">
+    <div class="pt-16 px-4 md:px-8 lg:px-12 pb-12">
       <div class="max-w-6xl mx-auto">
+        <!-- Titre principal -->
+        <h1
+          class="text-3xl md:text-4xl lg:text-5xl font-black leading-tight mb-8"
+          :style="{
+            color: '#FF1493',
+            textShadow:
+              '0 0 20px rgba(255, 105, 180, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.3)',
+          }"
+        >
+          Bonnes actions
+        </h1>
+
         <!-- Message si pas connecté -->
         <div
           v-if="!user"
