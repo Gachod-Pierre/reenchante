@@ -22,6 +22,17 @@ const { getContinentName } = useContinentCountries();
 const continentName = computed(() => {
   return props.continentId ? getContinentName(props.continentId) : "";
 });
+
+// ✅ Fonction pour corriger les URLs d'avatar Google
+const getAvatarUrl = (url: string | null | undefined): string => {
+  if (!url) return "";
+  // Si c'est une URL Google, ajouter le paramètre de taille
+  if (url.includes("googleusercontent.com")) {
+    // Ajouter =s96 pour demander une image de 96x96px
+    return url.includes("=s") ? url : `${url}=s96`;
+  }
+  return url;
+};
 </script>
 
 <template>
@@ -93,7 +104,7 @@ const continentName = computed(() => {
             <div class="flex items-start gap-3 mb-3">
               <img
                 v-if="deed.profiles?.avatar_url"
-                :src="deed.profiles.avatar_url"
+                :src="getAvatarUrl(deed.profiles.avatar_url)"
                 :alt="deed.profiles.full_name ?? 'User'"
                 class="w-10 h-10 rounded-full object-cover"
               >
