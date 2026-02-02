@@ -11,6 +11,7 @@ import { useCloudGenerator } from "../composables/useCloudGenerator";
 import { useCloudInstancedMesh } from "../composables/useCloudInstancedMesh";
 import { useUserDeedsByContinent } from "../composables/useUserDeedsByContinent";
 import ContinentOverlay from "./ContinentOverlay.vue";
+import InstructionModal from "./InstructionModal.vue";
 
 const { state: gltf } = useGLTF("/models/earth-cartoon.glb");
 const canvasRef = ref();
@@ -58,6 +59,7 @@ const isOverlayOpen = ref(false);
 const hoveredPingId = ref<string | null>(null);
 const mouseX = ref(0);
 const mouseY = ref(0);
+const showInstructionModal = ref(false); // Sera déterminé par localStorage
 let isLoadingDeeds = false;
 
 // Mapping des IDs de continents aux noms
@@ -143,6 +145,16 @@ watch(windowWidth, (newWidth) => {
 });
 
 onMounted(async () => {
+  // ✅ Vérifier si le modal a déjà été vu
+  const hasSeenInstructionModal = localStorage.getItem(
+    "hasSeenInstructionModal",
+  );
+  if (!hasSeenInstructionModal) {
+    showInstructionModal.value = true;
+    // Marquer le modal comme vu une fois qu'il est ouvert
+    localStorage.setItem("hasSeenInstructionModal", "true");
+  }
+
   // ✅ Animer le titre avec GSAP
   await nextTick();
   animateTitleLetters(titleRef.value);
@@ -514,6 +526,14 @@ onUnmounted(() => {
       :user-deeds="userDeeds"
       :loading="deedsLoading"
       @close="isOverlayOpen = false"
+    />
+
+    <!-- Modal d'instructions -->
+    <InstructionModal
+      :is-visible="showInstructionModal"
+      :delay="500"
+      :show-floating-button="true"
+      @close="showInstructionModal = false"
     />
 
     <!-- Card hover pour afficher le nom du continent -->
