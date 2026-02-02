@@ -24,7 +24,6 @@ const {
   rainbowOpacity,
   cloudsOpacity,
   pingsOpacity,
-  oscillationTime,
   startAnimation: startSceneAnimation,
   stopAnimation: stopSceneAnimation,
   getRenderLoopCallback,
@@ -121,7 +120,7 @@ const sunPosition = computed((): [number, number, number] => {
 // Hover radius is set dynamically in the interaction handler
 
 // ✅ Autres variables nécessaires pour le rendering
-let camera: THREE.PerspectiveCamera | THREE.Camera | null = null;
+let camera: THREE.PerspectiveCamera | null;
 let _raycaster: THREE.Raycaster | null = null;
 const pingMeshRefs = new Map<string, THREE.Mesh>();
 
@@ -335,7 +334,7 @@ onUnmounted(() => {
         transition: 'opacity 0.3s ease-out',
       }"
     >
-      Réenchante<br />le Monde
+      Réenchante<br >le Monde
     </h1>
 
     <TresCanvas
@@ -346,11 +345,10 @@ onUnmounted(() => {
       antialias
     >
       <TresPerspectiveCamera
-        ref="cameraRef"
         :position="[0, 2, 10]"
         :fov="50"
         @update="
-          (c) => {
+          (c: any) => {
             if (c instanceof THREE.PerspectiveCamera) {
               camera = c;
             }

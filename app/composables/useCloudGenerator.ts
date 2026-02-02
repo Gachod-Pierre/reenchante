@@ -230,8 +230,6 @@ export const useCloudGenerator = () => {
       });
     }
 
-    
-
     // COUCHE 6: Très proche (Z: 5 à 8) - Visible et cache la planète
     for (let i = 0; i < 12; i++) {
       const baseSeed = i * 1000 + 7000;
@@ -252,7 +250,7 @@ export const useCloudGenerator = () => {
     }
 
     return generatedClouds;
-  };;
+  };
 
   /**
    * Ajoute les couleurs de debug à chaque nuage par couche
@@ -269,8 +267,6 @@ export const useCloudGenerator = () => {
       "#ff00ff",
     ];
     let colorIndex = 0;
-    let currentLayer = -Infinity;
-    let nextZ = -Infinity;
 
     // Grouper par Z et attribuer des couleurs
     const sortedByZ = [...clouds].sort((a, b) => a.position[2] - b.position[2]);

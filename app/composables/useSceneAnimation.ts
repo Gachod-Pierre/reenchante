@@ -147,8 +147,9 @@ export function useSceneAnimation() {
     getCloudOscillationY: (cloudIndex: number) => {
       const layer = Math.floor(cloudIndex / 30) + 1; // Chaque couche a ~30 nuages
       const periods = [2.8, 3.2, 2.5, 3.5, 2.9, 3.1, 2.7]; // Période pour chaque couche
-      const period = periods[Math.min(layer - 1, 6)];
-      const amplitude = [6, 5, 7, 4, 6, 5, 7][Math.min(layer - 1, 6)] / 100; // Convertir en unités Three.js
+      const period = periods[Math.min(layer - 1, 6)] ?? 2.8; // Default to 2.8 if undefined
+      const amplitude =
+        ([6, 5, 7, 4, 6, 5, 7][Math.min(layer - 1, 6)] ?? 6) / 100; // Convertir en unités Three.js
       return (
         Math.sin((oscillationTime.value / period) * Math.PI * 2) * amplitude
       );
