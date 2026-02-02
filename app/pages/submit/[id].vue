@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { Database } from "../../types/database.types";
 
+definePageMeta({
+  middleware: ["auth", "submit-limit"],
+});
+
 const supabase = useSupabaseClient<Database>();
 const route = useRoute();
 const {
@@ -185,7 +189,7 @@ async function submitProof() {
     <label style="display: block; margin: 12px 0 6px"
       >Photo / capture (obligatoire)</label
     >
-    <input type="file" accept="image/*" @change="onFileChange" />
+    <input type="file" accept="image/*" @change="onFileChange" >
 
     <div style="margin-top: 16px">
       <button :disabled="loading" @click="submitProof">

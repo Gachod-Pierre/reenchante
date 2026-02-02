@@ -95,7 +95,8 @@ onUnmounted(() => {
             <div class="flex items-start space-x-3">
               <span class="text-2xl">🔄</span>
               <p>
-                <strong>Tourne la planète</strong> en l'attrapant avec ta souris ou ton doigt
+                <strong>Tourne la planète</strong> en l'attrapant avec ta souris
+                ou ton doigt
               </p>
             </div>
 
@@ -110,15 +111,14 @@ onUnmounted(() => {
             <div class="flex items-start space-x-3">
               <span class="text-2xl">✨</span>
               <p>
-                <strong>Soumets tes propres bonnes actions</strong> pour inspirer les
-                autres et apparaître sur la carte !
+                <strong>Soumets tes propres bonnes actions</strong> pour
+                inspirer les autres et apparaître sur la carte !
               </p>
             </div>
           </div>
 
           <button
-            class="w-full mt-6 text-white font-semibold py-3 px-4 rounded-lg hover:shadow-lg transition transform hover:scale-105"
-            :style="{ backgroundColor: '#FF1493' }"
+            class="w-full mt-6 text-white font-semibold py-3 px-4 rounded-lg bg-[#FF1493] hover:bg-[#D9187F] hover:shadow-lg transition transform hover:scale-105"
             @click="closeModal"
           >
             C'est parti ! 🚀

@@ -24,6 +24,11 @@ const { data: myDeeds } = await useAsyncData("myDeeds", async () => {
   if (error) throw error;
   return data;
 });
+
+// État du modal limite quotidienne
+const showDailyLimitModal = ref(false);
+const hasReachedDailyLimit = ref(false);
+
 async function signOut() {
   await supabase.auth.signOut();
   await navigateTo("/login");
@@ -49,6 +54,7 @@ async function deleteDeed(deedId: string) {
   await refreshNuxtData("myDeeds");
   alert("Bonne action supprimée ✅");
 }
+
 const { data: validatedDeeds } = await useAsyncData(
   "validatedDeeds",
   async () => {
@@ -81,9 +87,34 @@ const { data: userProfile } = await useAsyncData("userProfile", async () => {
   if (error) throw error;
   return data;
 });
+
+// Vérifier la limite quotidienne au montage
+onMounted(async () => {
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  const { count: validatedToday } = await supabase
+    .from("user_deeds")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId!)
+    .eq("status", "validated")
+    .gte("validated_at", today.toISOString());
+
+  if ((validatedToday ?? 0) >= 5) {
+    hasReachedDailyLimit.value = true;
+    showDailyLimitModal.value = true;
+  }
+});
 </script>
 <template>
   <div style="max-width: 900px; margin: 40px auto">
+    <!-- Modal limite quotidienne -->
+    <DailyLimitModal
+      :is-visible="showDailyLimitModal"
+      type="limit-daily-5-soft"
+      @close="showDailyLimitModal = false"
+    />
+
     <h1>Dashboard</h1>
     <div
       style="
@@ -117,7 +148,23 @@ const { data: userProfile } = await useAsyncData("userProfile", async () => {
           État : <code>{{ getStatusLabel(ud.status) }}</code>
         </div>
         <div style="display: flex; gap: 8px; margin-top: 8px">
-          <NuxtLink :to="`/submit/${ud.id}`">Soumettre la preuve</NuxtLink>
+          <NuxtLink
+            :to="`/submit/${ud.id}`"
+            :style="{
+              display: 'inline-block',
+              color: hasReachedDailyLimit ? '#9ca3af' : '#3b82f6',
+              textDecoration: hasReachedDailyLimit ? 'none' : 'underline',
+              padding: '8px 12px',
+              borderRadius: '4px',
+              cursor: hasReachedDailyLimit ? 'not-allowed' : 'pointer',
+              fontWeight: '500',
+              opacity: hasReachedDailyLimit ? 0.4 : 1,
+              pointerEvents: hasReachedDailyLimit ? 'none' : 'auto',
+              backgroundColor: hasReachedDailyLimit ? '#e5e7eb' : 'transparent',
+            }"
+          >
+            Soumettre la preuve
+          </NuxtLink>
           <button
             v-if="ud.status === 'in_progress'"
             style="

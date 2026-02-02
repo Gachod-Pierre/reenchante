@@ -74,8 +74,7 @@ const getAvatarUrl = (url: string | null | undefined): string => {
         </div>
         <NuxtLink
           to="/actions"
-          class="text-white font-semibold py-2 px-4 rounded-lg hover:shadow-lg transition transform hover:scale-105 text-center w-full lg:w-fit"
-          :style="{ backgroundColor: '#FF1493' }"
+          class="text-white font-semibold py-2 px-4 rounded-lg bg-[#FF1493] hover:bg-[#D9187F] hover:shadow-lg transition transform hover:scale-105 text-center w-full lg:w-fit"
           @click="$emit('close')"
         >
           ✨ Réenchanter le monde ✨
