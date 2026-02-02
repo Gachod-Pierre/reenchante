@@ -107,7 +107,7 @@ const getAvatarUrl = (url: string | null | undefined): string => {
                 :src="getAvatarUrl(deed.profiles.avatar_url)"
                 :alt="deed.profiles.full_name ?? 'User'"
                 class="w-10 h-10 rounded-full object-cover"
-              >
+              />
               <div class="flex-1">
                 <p class="font-semibold text-gray-900">
                   {{
