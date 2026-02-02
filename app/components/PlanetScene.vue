@@ -24,10 +24,14 @@ const {
   rainbowOpacity,
   cloudsOpacity,
   pingsOpacity,
+  oscillationTime,
   startAnimation: startSceneAnimation,
   stopAnimation: stopSceneAnimation,
   getRenderLoopCallback,
   setAnimationFrameId,
+  getSunOscillationY,
+  getCloudOscillationY,
+  getPlanetEntranceSlideY,
 } = useSceneAnimation();
 
 // ✅ Rotation composable
@@ -86,7 +90,7 @@ initializeClouds();
 // ✅ Cloud InstancedMesh composable
 const { initialize: initCloudInstancedMesh } = useCloudInstancedMesh();
 const cloudInstancedMesh = ref<THREE.InstancedMesh | null>(null);
-const canvasThreeRef = ref<any>(null);
+const canvasThreeRef = ref<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
 
 // ✅ Planet group ref
 const planetGroupRef = ref<THREE.Group | null>(null);
@@ -346,8 +350,10 @@ onUnmounted(() => {
         :position="[0, 2, 10]"
         :fov="50"
         @update="
-          (c: any) => {
-            camera = c;
+          (c) => {
+            if (c instanceof THREE.PerspectiveCamera) {
+              camera = c;
+            }
           }
         "
       />
@@ -355,7 +361,14 @@ onUnmounted(() => {
       <TresDirectionalLight :position="[10, 10, 10]" :intensity="2" />
 
       <!-- Soleil en arrière-plan -->
-      <TresMesh :position="sunPosition" :scale="[4, 4, 4]">
+      <TresMesh
+        :position="[
+          sunPosition[0],
+          sunPosition[1] + getSunOscillationY(),
+          sunPosition[2],
+        ]"
+        :scale="[4, 4, 4]"
+      >
         <TresSphereGeometry :args="[1, 32, 32]" />
         <TresMeshStandardMaterial
           color="#ffff00"
@@ -369,9 +382,12 @@ onUnmounted(() => {
 
       <!-- Halo de brillance du soleil -->
       <TresMesh
-        :position="sunPosition"
+        :position="[
+          sunPosition[0],
+          sunPosition[1] + getSunOscillationY(),
+          sunPosition[2],
+        ]"
         :scale="[4.5, 4.5, 4.5]"
-        :render-order="10"
       >
         <TresSphereGeometry :args="[1, 16, 16]" />
         <TresMeshBasicMaterial
@@ -402,7 +418,14 @@ onUnmounted(() => {
 
       <!-- ✅ Nuages générés procéduralement -->
       <template v-for="(cloud, index) in clouds" :key="`cloud-${index}`">
-        <TresMesh :position="cloud.position" :rotation="cloud.rotation">
+        <TresMesh
+          :position="[
+            cloud.position[0],
+            cloud.position[1] + getCloudOscillationY(index),
+            cloud.position[2],
+          ]"
+          :rotation="cloud.rotation"
+        >
           <TresIcosahedronGeometry :args="[cloud.scale, 0]" />
           <TresMeshStandardMaterial
             :color="cloud.color || '#ffffff'"
@@ -413,7 +436,10 @@ onUnmounted(() => {
       </template>
 
       <!-- Groupe contenant la planète et les pings (pour la rotation commune) -->
-      <TresGroup ref="planetGroupRef" :position="[0, -2, 0]">
+      <TresGroup
+        ref="planetGroupRef"
+        :position="[0, -2 + getPlanetEntranceSlideY(), 0]"
+      >
         <!-- Planète GLB (position relative au groupe qui est à [0, -2, 0]) -->
         <Suspense v-if="gltf?.scene">
           <primitive
