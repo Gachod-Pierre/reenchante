@@ -29,6 +29,10 @@ const { data: myDeeds } = await useAsyncData("myDeeds", async () => {
 const showDailyLimitModal = ref(false);
 const hasReachedDailyLimit = ref(false);
 
+// Pagination pour les bonnes actions validées
+const currentPage = ref(1);
+const perPage = 3; // 2 lignes x 3 colonnes
+
 async function signOut() {
   await supabase.auth.signOut();
   await navigateTo("/login");
@@ -105,9 +109,33 @@ onMounted(async () => {
     showDailyLimitModal.value = true;
   }
 });
+
+// Computed pour les bonnes actions affichées (paginées)
+const displayedValidatedDeeds = computed(() => {
+  const start = (currentPage.value - 1) * perPage;
+  const end = start + perPage;
+  return validatedDeeds.value?.slice(start, end) ?? [];
+});
+
+// Computed pour le nombre total de pages
+const totalPages = computed(() => {
+  return Math.ceil((validatedDeeds.value?.length ?? 0) / perPage);
+});
 </script>
+
 <template>
-  <div style="max-width: 900px; margin: 40px auto">
+  <div
+    class="relative"
+    :style="{
+      width: '100%',
+      minHeight: '100vh',
+      backgroundColor: '#f4f4f4',
+      backgroundImage:
+        'linear-gradient(rgba(180, 180, 180, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(180, 180, 180, 0.2) 1px, transparent 1px)',
+      backgroundSize: '60px 60px',
+    }"
+  >
+    <!-- Contenu wrapper ancien div -->
     <!-- Modal limite quotidienne -->
     <DailyLimitModal
       :is-visible="showDailyLimitModal"
@@ -115,106 +143,239 @@ onMounted(async () => {
       @close="showDailyLimitModal = false"
     />
 
-    <h1>Dashboard</h1>
-    <div
-      style="
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-      "
-    >
-      <div>
-        <h2 style="margin: 0">Mes points de réenchantement</h2>
-        <div style="font-size: 32px; font-weight: bold; color: #1f2937">
-          ✨ {{ userProfile?.total_points ?? 0 }} points
+    <!-- Contenu principal -->
+    <div class="pt-16 px-4 md:px-8 lg:px-12 pb-12">
+      <div class="max-w-6xl mx-auto">
+        <!-- Titre principal -->
+        <h1
+          class="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-12"
+          :style="{
+            color: '#FF1493',
+            textShadow:
+              '0 0 20px rgba(255, 105, 180, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.3)',
+          }"
+        >
+          Dashboard
+        </h1>
+
+        <!-- Section Points de réenchantement -->
+        <div
+          class="mb-12 p-6 md:p-8 rounded-3xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl"
+          :style="{
+            borderColor: '#FF69B4',
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          }"
+        >
+          <div
+            class="flex flex-col md:flex-row md:items-center md:justify-between gap-6"
+          >
+            <div>
+              <h2
+                class="text-xl md:text-2xl font-bold mb-3"
+                :style="{ color: '#FF1493' }"
+              >
+                Mes points de réenchantement
+              </h2>
+              <p
+                class="text-4xl md:text-5xl font-black"
+                :style="{ color: '#FF1493' }"
+              >
+                ✨ {{ userProfile?.total_points ?? 0 }} points
+              </p>
+            </div>
+            <button
+              class="w-full md:w-auto px-6 py-3 md:px-8 md:py-4 rounded-lg font-bold transition-all duration-300 hover:shadow-lg hover:scale-105 border-2 border-red-500 bg-transparent text-red-500 hover:bg-red-600 hover:text-white"
+              @click="signOut"
+            >
+              Se déconnecter 😓
+            </button>
+          </div>
         </div>
-      </div>
-      <button @click="signOut">Se déconnecter</button>
-    </div>
-    <h2>Mes bonnes actions en cours</h2>
-    <ul
-      v-if="myDeeds?.length"
-      style="display: grid; gap: 12px; list-style: none; padding: 0"
-    >
-      <li
-        v-for="ud in myDeeds"
-        :key="ud.id"
-        style="border: 1px solid #333; padding: 12px; border-radius: 12px"
-      >
-        <b>{{ ud.good_deeds?.title }}</b>
-        <div style="opacity: 0.85">{{ ud.good_deeds?.description }}</div>
-        <div style="margin: 6px 0">
-          État : <code>{{ getStatusLabel(ud.status) }}</code>
-        </div>
-        <div style="display: flex; gap: 8px; margin-top: 8px">
-          <NuxtLink
-            :to="`/submit/${ud.id}`"
+
+        <!-- Section Mes bonnes actions en cours -->
+        <div class="mb-12">
+          <h2
+            class="text-3xl md:text-4xl font-black mb-6"
+            :style="{ color: '#FF1493' }"
+          >
+            Mes bonnes actions en cours
+          </h2>
+
+          <div v-if="myDeeds?.length" class="grid gap-4 md:gap-6 grid-cols-1">
+            <div
+              v-for="ud in myDeeds"
+              :key="ud.id"
+              class="p-6 md:p-8 rounded-2xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:scale-105"
+              :style="{
+                borderColor: '#FF69B4',
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              }"
+            >
+              <h3
+                class="text-xl md:text-2xl font-bold mb-3"
+                :style="{ color: '#FF1493' }"
+              >
+                {{ ud.good_deeds?.title }}
+              </h3>
+              <p
+                class="text-gray-600 text-sm md:text-base mb-4 leading-relaxed"
+              >
+                {{ ud.good_deeds?.description }}
+              </p>
+              <div class="mb-4 flex items-center gap-2">
+                <span class="text-gray-700 font-semibold">État :</span>
+                <span
+                  class="px-3 py-1 rounded-full text-sm font-medium"
+                  :style="{
+                    backgroundColor: 'rgba(255, 20, 147, 0.15)',
+                    color: '#FF1493',
+                  }"
+                >
+                  {{ getStatusLabel(ud.status) }}
+                </span>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-3 mt-6">
+                <NuxtLink
+                  :to="`/submit/${ud.id}`"
+                  :class="[
+                    'px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold text-white transition-all duration-300 hover:scale-105 text-center',
+                    hasReachedDailyLimit
+                      ? 'bg-gray-400 cursor-not-allowed opacity-50'
+                      : 'bg-[#FF1493] hover:bg-[#D9187F] hover:shadow-lg',
+                  ]"
+                  :style="{
+                    pointerEvents: hasReachedDailyLimit ? 'none' : 'auto',
+                  }"
+                >
+                  Soumettre la preuve
+                </NuxtLink>
+                <button
+                  v-if="ud.status === 'in_progress'"
+                  class="px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold text-white bg-red-500 hover:bg-red-600 transition-all duration-300 hover:shadow-lg hover:scale-105"
+                  @click="deleteDeed(ud.id)"
+                >
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+          <div
+            v-else
+            class="p-8 rounded-2xl border-2 text-center"
             :style="{
-              display: 'inline-block',
-              color: hasReachedDailyLimit ? '#9ca3af' : '#3b82f6',
-              textDecoration: hasReachedDailyLimit ? 'none' : 'underline',
-              padding: '8px 12px',
-              borderRadius: '4px',
-              cursor: hasReachedDailyLimit ? 'not-allowed' : 'pointer',
-              fontWeight: '500',
-              opacity: hasReachedDailyLimit ? 0.4 : 1,
-              pointerEvents: hasReachedDailyLimit ? 'none' : 'auto',
-              backgroundColor: hasReachedDailyLimit ? '#e5e7eb' : 'transparent',
+              borderColor: '#FF69B4',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
             }"
           >
-            Soumettre la preuve
-          </NuxtLink>
-          <button
-            v-if="ud.status === 'in_progress'"
-            style="
-              background-color: #ef4444;
-              color: white;
-              padding: 4px 8px;
-              border: none;
-              border-radius: 4px;
-              cursor: pointer;
-            "
-            @click="deleteDeed(ud.id)"
-          >
-            Supprimer
-          </button>
-        </div>
-      </li>
-    </ul>
-    <p v-else>Tu n’as aucune action en cours.</p>
-    <section style="margin-top: 40px">
-      <h2>Mes bonnes actions validées</h2>
-      <p v-if="!validatedDeeds?.length">
-        Aucune bonne action validée pour l’instant 🌱
-      </p>
-      <ul v-else style="display: grid; gap: 16px">
-        <li
-          v-for="deed in validatedDeeds"
-          :key="deed.id"
-          style="border: 1px solid #ddd; padding: 12px"
-        >
-          <h3>{{ deed.good_deeds?.title }}</h3>
-          <div style="margin: 6px 0">
-            État : <code>{{ getStatusLabel(deed.status) }}</code>
+            <p class="text-gray-600 text-lg md:text-xl">
+              Tu n'as aucune action en cours !
+              <NuxtLink
+                to="/actions"
+                class="font-black transition-colors duration-300 hover:underline ml-2"
+                :style="{ color: '#FF1493' }"
+              >
+                ✨ Page des bonnes actions ✨
+              </NuxtLink>
+            </p>
           </div>
-          <img
-            v-if="deed.evidence_url"
-            :src="deed.evidence_url"
-            alt="preuve"
-            style="
-              max-width: 300px;
-              display: block;
-              margin: 12px 0;
-              border-radius: 8px;
-            "
+        </div>
+
+        <!-- Section Mes bonnes actions validées -->
+        <div>
+          <h2
+            class="text-3xl md:text-4xl font-black mb-6"
+            :style="{ color: '#FF1493' }"
           >
-          <p>
-            +{{ deed.good_deeds?.points }} points •
-            {{ new Date(deed.selected_at).toLocaleDateString() }}
-          </p>
-        </li>
-      </ul>
-    </section>
+            Mes bonnes actions validées
+          </h2>
+
+          <div
+            v-if="!validatedDeeds?.length"
+            class="p-8 rounded-2xl border-2 text-center"
+            :style="{
+              borderColor: '#FF69B4',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            }"
+          >
+            <p class="text-gray-600 text-lg md:text-xl">
+              Aucune bonne action validée pour l'instant 🌱
+            </p>
+          </div>
+          <div
+            v-else
+            class="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+          >
+            <div
+              v-for="deed in displayedValidatedDeeds"
+              :key="deed.id"
+              class="p-6 md:p-8 rounded-2xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:scale-105"
+              :style="{
+                borderColor: '#FF69B4',
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              }"
+            >
+              <h3
+                class="text-xl md:text-2xl font-bold mb-3"
+                :style="{ color: '#FF1493' }"
+              >
+                {{ deed.good_deeds?.title }}
+              </h3>
+              <div class="mb-4 flex items-center gap-2">
+                <span class="text-gray-700 font-semibold">État :</span>
+                <span
+                  class="px-3 py-1 rounded-full text-sm font-medium"
+                  :style="{
+                    backgroundColor: 'rgba(255, 20, 147, 0.15)',
+                    color: '#FF1493',
+                  }"
+                >
+                  {{ getStatusLabel(deed.status) }}
+                </span>
+              </div>
+              <img
+                v-if="deed.evidence_url"
+                :src="deed.evidence_url"
+                alt="preuve"
+                class="h-64 w-auto rounded-xl mb-6 object-cover"
+              >
+
+              <!-- Points et Date en évidence -->
+              <div class="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200">
+                <div
+                  class="text-center p-2 rounded-lg justify-center items-center flex"
+                  :style="{ backgroundColor: 'rgba(255, 20, 147, 0.1)' }"
+                >
+                  <p
+                    class="text-xl md:text-2xl font-black mb-0"
+                    :style="{ color: '#FF1493' }"
+                  >
+                    +{{ deed.good_deeds?.points }} pts
+                  </p>
+                </div>
+                <div
+                  class="text-center p-2 rounded-lg justify-center items-center flex"
+                  :style="{ backgroundColor: 'rgba(255, 20, 147, 0.1)' }"
+                >
+                  <p class="text-sm md:text-base font-bold text-gray-700 mb-0">
+                    {{
+                      new Date(deed.selected_at).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pagination -->
+          <div v-if="validatedDeeds && validatedDeeds.length > 0" class="mt-8">
+            <MyPagination v-model="currentPage" :total-pages="totalPages" />
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

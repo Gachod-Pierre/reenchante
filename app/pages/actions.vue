@@ -157,7 +157,7 @@ const pageStyle = {
       <div class="max-w-6xl mx-auto">
         <!-- Titre principal -->
         <h1
-          class="text-3xl md:text-4xl lg:text-5xl font-black leading-tight mb-8"
+          class="text-3xl md:text-4xl lg:text-5xl font-black leading-tight mb-12"
           :style="{
             color: '#FF1493',
             textShadow:
