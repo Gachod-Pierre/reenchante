@@ -179,12 +179,127 @@ export function useSceneAnimation() {
       const spans = titleRef.querySelectorAll("span") || [];
       const tl = gsap.timeline();
 
+      // Animation d'entrée des lettres
       tl.to(spans, {
         opacity: 1,
         y: 0,
         stagger: 0.08,
         duration: 0.6,
         ease: "back.out(1.7)",
+      });
+
+      // Animation de la respiration fluide du glow (sans à-coup)
+      gsap.to(titleRef, {
+        textShadow:
+          "0 0 40px rgba(255, 105, 180, 1.2), 2px 2px 4px rgba(0, 0, 0, 0.3)",
+        duration: 1.8,
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: -1,
+      });
+
+      // ✨ Animation SVG sur certaines lettres
+      const svgIndices = [14]; // Index du "o" de "Monde"
+      svgIndices.forEach((index) => {
+        if (spans[index]) {
+          const span = spans[index] as HTMLElement;
+
+          // ✨ Vider le contenu du span
+          span.textContent = "";
+
+          // Créer l'SVG
+          const svg = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "svg",
+          );
+          svg.setAttribute("width", "0.8em");
+          svg.setAttribute("height", "0.8em");
+          svg.setAttribute("viewBox", "0 0 24 24");
+          svg.setAttribute("fill", "none");
+          svg.setAttribute("stroke", "currentColor");
+          svg.setAttribute("stroke-width", "2");
+          svg.style.display = "inline-block";
+          svg.style.verticalAlign = "middle";
+          svg.style.marginLeft = "4px";
+          svg.style.marginRight = "4px";
+          svg.style.opacity = "0";
+
+          // Star SVG path
+          const starPath =
+            "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z";
+
+          const path = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path",
+          );
+          path.setAttribute("d", starPath);
+          svg.appendChild(path);
+          span.appendChild(svg);
+
+          // Animation de révélation du SVG avec rotation
+          gsap.to(svg, {
+            opacity: 1,
+            rotation: 360,
+            duration: 0.8,
+            delay: 0.5 + index * 0.08,
+            ease: "back.out(1.7)",
+          });
+
+          // Animation de rotation continue + pulse
+          gsap.to(svg, {
+            rotation: 360,
+            duration: 2,
+            delay: 0.5 + index * 0.08 + 0.8,
+            repeat: -1,
+            ease: "sine.inOut",
+          });
+
+          // Animation de pulse (scale)
+          gsap.to(svg, {
+            scale: 1.15,
+            duration: 1,
+            delay: 0.5 + index * 0.08 + 0.8,
+            yoyo: true,
+            repeat: -1,
+            ease: "sine.inOut",
+          });
+        }
+      });
+
+      // Effet hover - dispersion des lettres
+      titleRef.addEventListener("mouseenter", () => {
+        gsap.to(spans, {
+          x: () => (Math.random() - 0.5) * 40,
+          y: () => (Math.random() - 0.5) * 40,
+          rotation: () => (Math.random() - 0.5) * 45,
+          duration: 0.5,
+          ease: "back.out(1.5)",
+        });
+
+        // L'étoile tourne plus vite au hover (sans écraser l'animation continue)
+        spans.forEach((span: Element) => {
+          const svg = span.querySelector("svg");
+          if (svg) {
+            // Accélérer la rotation sans interrompre l'animation continue
+            gsap.to(svg, {
+              rotation: "+=720", // Ajoute 720° à la rotation actuelle
+              duration: 0.3,
+              ease: "power2.inOut",
+              overwrite: "auto", // Permet aux animations de coexister
+            });
+          }
+        });
+      });
+
+      // Effet hover out - retour à la position
+      titleRef.addEventListener("mouseleave", () => {
+        gsap.to(spans, {
+          x: 0,
+          y: 0,
+          rotation: 0,
+          duration: 0.6,
+          ease: "elastic.out(1, 0.5)",
+        });
       });
     },
   };

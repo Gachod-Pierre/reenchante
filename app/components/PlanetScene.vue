@@ -2,7 +2,6 @@
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from "vue";
 import { useGLTF } from "@tresjs/cientos";
 import * as THREE from "three";
-import gsap from "gsap";
 import { useSceneAnimation } from "../composables/useSceneAnimation";
 import { usePlanetRotation } from "../composables/usePlanetRotation";
 import { useRainbowArcs } from "../composables/useRainbowArcs";
@@ -354,11 +353,13 @@ onUnmounted(() => {
           {{ letter }}
         </span>
       </div>
+      <!-- Espace normal entre les deux lignes -->
       <div>
         <span
           v-for="(letter, index) in line2Letters"
           :key="`l2-${index}`"
           class="inline-block opacity-0 translate-y-10"
+          :class="{ 'w-6': letter === ' ' }"
         >
           {{ letter }}
         </span>
