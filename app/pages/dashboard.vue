@@ -94,8 +94,9 @@ const isUploadingAvatar = ref(false);
 
 // État pour le filtrage et tri (utilisé par le composant ValidatedDeedsFilter)
 const selectedTags = ref<string[]>([]);
-const sortBy = ref<"points" | "date" | "none">("none");
+const sortBy = ref<"points" | "date" | "difficulty" | "none">("none");
 const sortOrder = ref<"asc" | "desc">("desc");
+const difficultyLevel = ref<"facile" | "moyen" | "difficile" | "none">("none");
 
 // Initialiser les valeurs d'édition quand le profil se charge
 watch(userProfile, (newProfile) => {
@@ -160,6 +161,20 @@ const filteredAndSortedDeeds = computed(() => {
       const dateB = new Date(b.selected_at).getTime();
       return sortOrder.value === "asc" ? dateA - dateB : dateB - dateA;
     });
+  } else if (sortBy.value === "difficulty") {
+    const difficultyOrder = { "facile": 1, "moyen": 2, "difficile": 3 };
+    if (difficultyLevel.value === "none") {
+      // Trier de facile à difficile
+      sorted.sort((a, b) => {
+        const diffA = difficultyOrder[a.good_deeds?.difficulty as keyof typeof difficultyOrder] ?? 0;
+        const diffB = difficultyOrder[b.good_deeds?.difficulty as keyof typeof difficultyOrder] ?? 0;
+        return diffA - diffB;
+      });
+    } else {
+      // Filtrer par niveau sélectionné et trier par difficulté restante
+      const filtered = sorted.filter((deed) => deed.good_deeds?.difficulty === difficultyLevel.value);
+      return filtered;
+    }
   }
   // Si sortBy === "none", pas de tri
 
@@ -277,10 +292,12 @@ const filteredAndSortedDeeds = computed(() => {
             :selected-tags="selectedTags"
             :sort-by="sortBy"
             :sort-order="sortOrder"
+            :difficulty-level="difficultyLevel"
             :filtered-count="filteredAndSortedDeeds.length"
             @update:selected-tags="selectedTags = $event"
             @update:sort-by="sortBy = $event"
             @update:sort-order="sortOrder = $event"
+            @update:difficulty-level="difficultyLevel = $event"
           />
 
           <div
@@ -338,7 +355,7 @@ const filteredAndSortedDeeds = computed(() => {
                     :src="deed.evidence_url"
                     alt="preuve"
                     class="h-64 w-auto rounded-xl mb-6 object-cover"
-                  >
+                  />
 
                   <!-- Points et Date en évidence -->
                   <div

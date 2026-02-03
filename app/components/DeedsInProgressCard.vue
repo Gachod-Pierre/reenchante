@@ -37,11 +37,10 @@ function handleDelete() {
     }"
   >
     <!-- Titre et points potentiels -->
-    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
-      <h3
-        class="text-xl md:text-2xl font-bold"
-        :style="{ color: '#FF1493' }"
-      >
+    <div
+      class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3"
+    >
+      <h3 class="text-xl md:text-2xl font-bold" :style="{ color: '#FF1493' }">
         {{ deed.good_deeds?.title }}
       </h3>
       <div
@@ -56,9 +55,7 @@ function handleDelete() {
     </div>
 
     <!-- Description -->
-    <p
-      class="text-gray-600 text-sm md:text-base mb-4 leading-relaxed"
-    >
+    <p class="text-gray-600 text-sm md:text-base mb-4 leading-relaxed">
       {{ deed.good_deeds?.description }}
     </p>
 

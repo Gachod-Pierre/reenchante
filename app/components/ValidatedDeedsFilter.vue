@@ -20,16 +20,18 @@ const AVAILABLE_TAGS = [
 // Props
 interface Props {
   selectedTags: string[];
-  sortBy: "points" | "date" | "none";
+  sortBy: "points" | "date" | "difficulty" | "none";
   sortOrder: "asc" | "desc";
+  difficultyLevel: "facile" | "moyen" | "difficile" | "none";
   filteredCount: number;
 }
 
 // Emit
 const emit = defineEmits<{
   "update:selectedTags": [tags: string[]];
-  "update:sortBy": [sort: "points" | "date" | "none"];
+  "update:sortBy": [sort: "points" | "date" | "difficulty" | "none"];
   "update:sortOrder": [order: "asc" | "desc"];
+  "update:difficultyLevel": [level: "facile" | "moyen" | "difficile" | "none"];
 }>();
 
 const props = defineProps<Props>();
@@ -141,11 +143,28 @@ const toggleTag = (tag: string) => {
           >
             Date
           </button>
+          <button
+            :class="[
+              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              props.sortBy === 'difficulty'
+                ? 'text-white'
+                : 'bg-white text-gray-700 border-2',
+            ]"
+            :style="{
+              backgroundColor:
+                props.sortBy === 'difficulty' ? '#FF1493' : 'transparent',
+              borderColor: props.sortBy === 'difficulty' ? '#FF1493' : '#FF69B4',
+              color: props.sortBy === 'difficulty' ? 'white' : '#FF1493',
+            }"
+            @click="emit('update:sortBy', 'difficulty')"
+          >
+            Difficulté
+          </button>
         </div>
       </div>
 
-      <!-- Ordre croissant/Décroissant (visible seulement si tri actif) -->
-      <div v-if="props.sortBy !== 'none'">
+      <!-- Ordre croissant/Décroissant (visible seulement si tri par points ou date) -->
+      <div v-if="props.sortBy === 'points' || props.sortBy === 'date'">
         <label class="text-sm font-semibold text-gray-700 block mb-2">
           Ordre
         </label>
@@ -183,6 +202,83 @@ const toggleTag = (tag: string) => {
             @click="emit('update:sortOrder', 'desc')"
           >
             {{ props.sortBy === "points" ? "⬇️ Décroissant" : "📅 Récent" }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Difficulté (visible seulement si tri par difficulté) -->
+      <div v-if="props.sortBy === 'difficulty'">
+        <label class="text-sm font-semibold text-gray-700 block mb-2">
+          Niveau
+        </label>
+        <div class="flex gap-2">
+          <button
+            :class="[
+              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              props.difficultyLevel === 'none'
+                ? 'text-white'
+                : 'bg-white text-gray-700 border-2',
+            ]"
+            :style="{
+              backgroundColor:
+                props.difficultyLevel === 'none' ? '#FF1493' : 'transparent',
+              borderColor: props.difficultyLevel === 'none' ? '#FF1493' : '#FF69B4',
+              color: props.difficultyLevel === 'none' ? 'white' : '#FF1493',
+            }"
+            @click="emit('update:difficultyLevel', 'none')"
+          >
+            Aucun
+          </button>
+          <button
+            :class="[
+              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              props.difficultyLevel === 'facile'
+                ? 'text-white'
+                : 'bg-white text-gray-700 border-2',
+            ]"
+            :style="{
+              backgroundColor:
+                props.difficultyLevel === 'facile' ? '#FF1493' : 'transparent',
+              borderColor: props.difficultyLevel === 'facile' ? '#FF1493' : '#FF69B4',
+              color: props.difficultyLevel === 'facile' ? 'white' : '#FF1493',
+            }"
+            @click="emit('update:difficultyLevel', 'facile')"
+          >
+            📊 Facile
+          </button>
+          <button
+            :class="[
+              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              props.difficultyLevel === 'moyen'
+                ? 'text-white'
+                : 'bg-white text-gray-700 border-2',
+            ]"
+            :style="{
+              backgroundColor:
+                props.difficultyLevel === 'moyen' ? '#FF1493' : 'transparent',
+              borderColor: props.difficultyLevel === 'moyen' ? '#FF1493' : '#FF69B4',
+              color: props.difficultyLevel === 'moyen' ? 'white' : '#FF1493',
+            }"
+            @click="emit('update:difficultyLevel', 'moyen')"
+          >
+            📊 Moyen
+          </button>
+          <button
+            :class="[
+              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              props.difficultyLevel === 'difficile'
+                ? 'text-white'
+                : 'bg-white text-gray-700 border-2',
+            ]"
+            :style="{
+              backgroundColor:
+                props.difficultyLevel === 'difficile' ? '#FF1493' : 'transparent',
+              borderColor: props.difficultyLevel === 'difficile' ? '#FF1493' : '#FF69B4',
+              color: props.difficultyLevel === 'difficile' ? 'white' : '#FF1493',
+            }"
+            @click="emit('update:difficultyLevel', 'difficile')"
+          >
+            📊 Difficile
           </button>
         </div>
       </div>
