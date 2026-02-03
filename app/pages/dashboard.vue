@@ -234,62 +234,13 @@ const filteredAndSortedDeeds = computed(() => {
           </h2>
 
           <div v-if="myDeeds?.length" class="grid gap-4 md:gap-6 grid-cols-1">
-            <div
+            <DeedsInProgressCard
               v-for="ud in myDeeds"
               :key="ud.id"
-              class="p-6 md:p-8 rounded-2xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:scale-105"
-              :style="{
-                borderColor: '#FF69B4',
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              }"
-            >
-              <h3
-                class="text-xl md:text-2xl font-bold mb-3"
-                :style="{ color: '#FF1493' }"
-              >
-                {{ ud.good_deeds?.title }}
-              </h3>
-              <p
-                class="text-gray-600 text-sm md:text-base mb-4 leading-relaxed"
-              >
-                {{ ud.good_deeds?.description }}
-              </p>
-              <div class="mb-4 flex items-center gap-2">
-                <span class="text-gray-700 font-semibold">État :</span>
-                <span
-                  class="px-3 py-1 rounded-full text-sm font-medium"
-                  :style="{
-                    backgroundColor: 'rgba(255, 20, 147, 0.15)',
-                    color: '#FF1493',
-                  }"
-                >
-                  {{ getStatusLabel(ud.status) }}
-                </span>
-              </div>
-              <div class="flex flex-col sm:flex-row gap-3 mt-6">
-                <NuxtLink
-                  :to="`/submit/${ud.id}`"
-                  :class="[
-                    'px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold text-white transition-all duration-300 hover:scale-105 text-center',
-                    hasReachedDailyLimit
-                      ? 'bg-gray-400 cursor-not-allowed opacity-50'
-                      : 'bg-[#FF1493] hover:bg-[#D9187F] hover:shadow-lg',
-                  ]"
-                  :style="{
-                    pointerEvents: hasReachedDailyLimit ? 'none' : 'auto',
-                  }"
-                >
-                  Soumettre la preuve
-                </NuxtLink>
-                <button
-                  v-if="ud.status === 'in_progress'"
-                  class="px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold text-white bg-red-500 hover:bg-red-600 transition-all duration-300 hover:shadow-lg hover:scale-105"
-                  @click="deleteDeed(ud.id)"
-                >
-                  Supprimer
-                </button>
-              </div>
-            </div>
+              :deed="ud"
+              :has-reached-daily-limit="hasReachedDailyLimit"
+              @delete="deleteDeed"
+            />
           </div>
           <div
             v-else
@@ -387,7 +338,7 @@ const filteredAndSortedDeeds = computed(() => {
                     :src="deed.evidence_url"
                     alt="preuve"
                     class="h-64 w-auto rounded-xl mb-6 object-cover"
-                  />
+                  >
 
                   <!-- Points et Date en évidence -->
                   <div
