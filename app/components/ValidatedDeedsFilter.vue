@@ -153,7 +153,8 @@ const toggleTag = (tag: string) => {
             :style="{
               backgroundColor:
                 props.sortBy === 'difficulty' ? '#FF1493' : 'transparent',
-              borderColor: props.sortBy === 'difficulty' ? '#FF1493' : '#FF69B4',
+              borderColor:
+                props.sortBy === 'difficulty' ? '#FF1493' : '#FF69B4',
               color: props.sortBy === 'difficulty' ? 'white' : '#FF1493',
             }"
             @click="emit('update:sortBy', 'difficulty')"
@@ -222,7 +223,8 @@ const toggleTag = (tag: string) => {
             :style="{
               backgroundColor:
                 props.difficultyLevel === 'none' ? '#FF1493' : 'transparent',
-              borderColor: props.difficultyLevel === 'none' ? '#FF1493' : '#FF69B4',
+              borderColor:
+                props.difficultyLevel === 'none' ? '#FF1493' : '#FF69B4',
               color: props.difficultyLevel === 'none' ? 'white' : '#FF1493',
             }"
             @click="emit('update:difficultyLevel', 'none')"
@@ -239,7 +241,8 @@ const toggleTag = (tag: string) => {
             :style="{
               backgroundColor:
                 props.difficultyLevel === 'facile' ? '#FF1493' : 'transparent',
-              borderColor: props.difficultyLevel === 'facile' ? '#FF1493' : '#FF69B4',
+              borderColor:
+                props.difficultyLevel === 'facile' ? '#FF1493' : '#FF69B4',
               color: props.difficultyLevel === 'facile' ? 'white' : '#FF1493',
             }"
             @click="emit('update:difficultyLevel', 'facile')"
@@ -256,7 +259,8 @@ const toggleTag = (tag: string) => {
             :style="{
               backgroundColor:
                 props.difficultyLevel === 'moyen' ? '#FF1493' : 'transparent',
-              borderColor: props.difficultyLevel === 'moyen' ? '#FF1493' : '#FF69B4',
+              borderColor:
+                props.difficultyLevel === 'moyen' ? '#FF1493' : '#FF69B4',
               color: props.difficultyLevel === 'moyen' ? 'white' : '#FF1493',
             }"
             @click="emit('update:difficultyLevel', 'moyen')"
@@ -272,9 +276,13 @@ const toggleTag = (tag: string) => {
             ]"
             :style="{
               backgroundColor:
-                props.difficultyLevel === 'difficile' ? '#FF1493' : 'transparent',
-              borderColor: props.difficultyLevel === 'difficile' ? '#FF1493' : '#FF69B4',
-              color: props.difficultyLevel === 'difficile' ? 'white' : '#FF1493',
+                props.difficultyLevel === 'difficile'
+                  ? '#FF1493'
+                  : 'transparent',
+              borderColor:
+                props.difficultyLevel === 'difficile' ? '#FF1493' : '#FF69B4',
+              color:
+                props.difficultyLevel === 'difficile' ? 'white' : '#FF1493',
             }"
             @click="emit('update:difficultyLevel', 'difficile')"
           >

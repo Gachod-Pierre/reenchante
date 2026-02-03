@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Database } from "../types/database.types";
-import { getStatusLabel } from "../utils/statusLabels";
 definePageMeta({ middleware: ["auth"] });
 const supabase = useSupabaseClient<Database>();
 
@@ -162,17 +161,25 @@ const filteredAndSortedDeeds = computed(() => {
       return sortOrder.value === "asc" ? dateA - dateB : dateB - dateA;
     });
   } else if (sortBy.value === "difficulty") {
-    const difficultyOrder = { "facile": 1, "moyen": 2, "difficile": 3 };
+    const difficultyOrder = { facile: 1, moyen: 2, difficile: 3 };
     if (difficultyLevel.value === "none") {
       // Trier de facile à difficile
       sorted.sort((a, b) => {
-        const diffA = difficultyOrder[a.good_deeds?.difficulty as keyof typeof difficultyOrder] ?? 0;
-        const diffB = difficultyOrder[b.good_deeds?.difficulty as keyof typeof difficultyOrder] ?? 0;
+        const diffA =
+          difficultyOrder[
+            a.good_deeds?.difficulty as keyof typeof difficultyOrder
+          ] ?? 0;
+        const diffB =
+          difficultyOrder[
+            b.good_deeds?.difficulty as keyof typeof difficultyOrder
+          ] ?? 0;
         return diffA - diffB;
       });
     } else {
       // Filtrer par niveau sélectionné et trier par difficulté restante
-      const filtered = sorted.filter((deed) => deed.good_deeds?.difficulty === difficultyLevel.value);
+      const filtered = sorted.filter(
+        (deed) => deed.good_deeds?.difficulty === difficultyLevel.value,
+      );
       return filtered;
     }
   }
@@ -323,76 +330,11 @@ const filteredAndSortedDeeds = computed(() => {
               <div
                 class="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
               >
-                <div
+                <ValidatedDeedCard
                   v-for="deed in items"
                   :key="deed.id"
-                  class="p-6 md:p-8 rounded-2xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:scale-105"
-                  :style="{
-                    borderColor: '#FF69B4',
-                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                  }"
-                >
-                  <h3
-                    class="text-xl md:text-2xl font-bold mb-3"
-                    :style="{ color: '#FF1493' }"
-                  >
-                    {{ deed.good_deeds?.title }}
-                  </h3>
-                  <div class="mb-4 flex items-center gap-2">
-                    <span class="text-gray-700 font-semibold">État :</span>
-                    <span
-                      class="px-3 py-1 rounded-full text-sm font-medium"
-                      :style="{
-                        backgroundColor: 'rgba(255, 20, 147, 0.15)',
-                        color: '#FF1493',
-                      }"
-                    >
-                      {{ getStatusLabel(deed.status) }}
-                    </span>
-                  </div>
-                  <img
-                    v-if="deed.evidence_url"
-                    :src="deed.evidence_url"
-                    alt="preuve"
-                    class="h-64 w-auto rounded-xl mb-6 object-cover"
-                  />
-
-                  <!-- Points et Date en évidence -->
-                  <div
-                    class="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200"
-                  >
-                    <div
-                      class="text-center p-2 rounded-lg justify-center items-center flex"
-                      :style="{ backgroundColor: 'rgba(255, 20, 147, 0.1)' }"
-                    >
-                      <p
-                        class="text-xl md:text-2xl font-black mb-0"
-                        :style="{ color: '#FF1493' }"
-                      >
-                        +{{ deed.good_deeds?.points }} pts
-                      </p>
-                    </div>
-                    <div
-                      class="text-center p-2 rounded-lg justify-center items-center flex"
-                      :style="{ backgroundColor: 'rgba(255, 20, 147, 0.1)' }"
-                    >
-                      <p
-                        class="text-sm md:text-base font-bold text-gray-700 mb-0"
-                      >
-                        {{
-                          new Date(deed.selected_at).toLocaleDateString(
-                            "fr-FR",
-                            {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            },
-                          )
-                        }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                  :deed="deed"
+                />
               </div>
             </template>
           </PaginatedView>
