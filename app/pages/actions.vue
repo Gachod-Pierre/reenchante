@@ -245,6 +245,11 @@ const pageStyle = {
           Bonnes actions
         </h1>
 
+        <!-- Texte descriptif -->
+        <p class="text-gray-700 text-lg leading-relaxed mb-12">
+          Découvrez une multitude de bonnes actions à accomplir pour réenchanter le monde ! Du plus simple au plus ambitieux, chaque action est une opportunité de contribuer au bien-être collectif.
+        </p>
+
         <!-- Message si pas connecté -->
         <div
           v-if="!user"
