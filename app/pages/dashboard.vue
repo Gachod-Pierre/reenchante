@@ -114,7 +114,9 @@ const difficultyLevel = ref<"facile" | "moyen" | "difficile" | "none">("none");
 
 // État du modal et limite quotidienne
 const showDailyLimitModal = ref(false);
-const hasReachedDailyLimit = computed(() => (dailyValidationCount.value ?? 0) >= 5);
+const hasReachedDailyLimit = computed(
+  () => (dailyValidationCount.value ?? 0) >= 5,
+);
 
 // Afficher le modal quand la limite est atteinte
 watch(

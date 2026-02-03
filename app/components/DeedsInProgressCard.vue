@@ -26,6 +26,13 @@ const props = defineProps<Props>();
 function handleDelete() {
   emit("delete", props.deed.id);
 }
+
+// Handler for submit
+function handleSubmit() {
+  if (!props.hasReachedDailyLimit) {
+    navigateTo(`/submit/${props.deed.id}`);
+  }
+}
 </script>
 
 <template>
@@ -75,20 +82,18 @@ function handleDelete() {
 
     <!-- Actions -->
     <div class="flex flex-col sm:flex-row gap-3 mt-6">
-      <NuxtLink
-        :to="`/submit/${deed.id}`"
+      <button
         :class="[
           'px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold text-white transition-all duration-300 hover:scale-105 text-center',
           hasReachedDailyLimit
-            ? 'bg-gray-400 cursor-not-allowed opacity-50'
+            ? 'bg-gray-400 opacity-50 cursor-not-allowed'
             : 'bg-[#FF1493] hover:bg-[#D9187F] hover:shadow-lg',
         ]"
-        :style="{
-          pointerEvents: hasReachedDailyLimit ? 'none' : 'auto',
-        }"
+        :disabled="hasReachedDailyLimit"
+        @click="handleSubmit"
       >
         Soumettre la preuve
-      </NuxtLink>
+      </button>
       <button
         v-if="deed.status === 'in_progress'"
         class="px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold text-white bg-red-500 hover:bg-red-600 transition-all duration-300 hover:shadow-lg hover:scale-105"
