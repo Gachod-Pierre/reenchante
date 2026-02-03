@@ -18,22 +18,28 @@ export type Database = {
         Row: {
           created_at: string
           description: string
+          difficulty: Database["public"]["Enums"]["good_deed_difficulty"]
           id: string
           points: number
+          tags: string[]
           title: string
         }
         Insert: {
           created_at?: string
           description: string
+          difficulty?: Database["public"]["Enums"]["good_deed_difficulty"]
           id?: string
           points: number
+          tags?: string[]
           title: string
         }
         Update: {
           created_at?: string
           description?: string
+          difficulty?: Database["public"]["Enums"]["good_deed_difficulty"]
           id?: string
           points?: number
+          tags?: string[]
           title?: string
         }
         Relationships: []
@@ -139,7 +145,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      good_deed_difficulty: "facile" | "moyen" | "difficile"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -266,6 +272,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      good_deed_difficulty: ["facile", "moyen", "difficile"],
+    },
   },
 } as const

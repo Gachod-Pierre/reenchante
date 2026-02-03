@@ -70,7 +70,7 @@ const { data: validatedDeeds } = await useAsyncData(
         good_deed_id,
         selected_at,
         evidence_url,
-        good_deeds(title,points,description)`,
+        good_deeds(title,points,description,tags,difficulty)`,
       )
       .eq("user_id", userId!)
       .eq("status", "validated")
@@ -97,6 +97,29 @@ const isEditingProfile = ref(false);
 const editedUsername = ref("");
 const editedAvatarUrl = ref("");
 const isUploadingAvatar = ref(false);
+
+// Constante des tags disponibles
+const AVAILABLE_TAGS = [
+  "environnement",
+  "eco_geste",
+  "zero_dechet",
+  "alimentation",
+  "solidarite",
+  "entraide",
+  "communaute",
+  "bienveillance",
+  "bien_etre",
+  "sante",
+  "creativite",
+  "culture",
+  "numerique",
+  "apprentissage",
+] as const;
+
+// État pour le filtrage et tri
+const selectedTags = ref<string[]>([]);
+const sortBy = ref<"points" | "date" | "none">("none");
+const sortOrder = ref<"asc" | "desc">("desc");
 
 // Initialiser les valeurs d'édition quand le profil se charge
 watch(userProfile, (newProfile) => {
@@ -194,16 +217,49 @@ onMounted(async () => {
   }
 });
 
-// Computed pour les bonnes actions affichées (paginées)
+// Computed pour les bonnes actions filtrées et triées
+const filteredAndSortedDeeds = computed(() => {
+  if (!validatedDeeds.value) return [];
+
+  // Filtrage par tags
+  let filtered = validatedDeeds.value;
+  if (selectedTags.value.length > 0) {
+    filtered = filtered.filter((deed) => {
+      const deedTags = deed.good_deeds?.tags ?? [];
+      return selectedTags.value.some((tag) => deedTags.includes(tag));
+    });
+  }
+
+  // Tri
+  const sorted = [...filtered];
+  if (sortBy.value === "points") {
+    sorted.sort((a, b) => {
+      const pointsA = a.good_deeds?.points ?? 0;
+      const pointsB = b.good_deeds?.points ?? 0;
+      return sortOrder.value === "asc" ? pointsA - pointsB : pointsB - pointsA;
+    });
+  } else if (sortBy.value === "date") {
+    sorted.sort((a, b) => {
+      const dateA = new Date(a.selected_at).getTime();
+      const dateB = new Date(b.selected_at).getTime();
+      return sortOrder.value === "asc" ? dateA - dateB : dateB - dateA;
+    });
+  }
+  // Si sortBy === "none", pas de tri
+
+  return sorted;
+});
+
+// Computed pour les bonnes actions affichées (paginées après filtrage/tri)
 const displayedValidatedDeeds = computed(() => {
   const start = (currentPage.value - 1) * perPage;
   const end = start + perPage;
-  return validatedDeeds.value?.slice(start, end) ?? [];
+  return filteredAndSortedDeeds.value.slice(start, end);
 });
 
-// Computed pour le nombre total de pages
+// Computed pour le nombre total de pages (basé sur les données filtrées)
 const totalPages = computed(() => {
-  return Math.ceil((validatedDeeds.value?.length ?? 0) / perPage);
+  return Math.ceil((filteredAndSortedDeeds.value.length ?? 0) / perPage);
 });
 </script>
 
@@ -484,6 +540,157 @@ const totalPages = computed(() => {
           >
             Mes bonnes actions validées
           </h2>
+
+          <!-- Filtres et Tris -->
+          <div
+            v-if="validatedDeeds?.length"
+            class="mb-8 p-6 rounded-2xl border-2 backdrop-blur-sm"
+            :style="{
+              borderColor: '#FF69B4',
+              backgroundColor: 'rgba(255, 255, 255, 0.5)',
+            }"
+          >
+            <!-- Filtrage par Tags -->
+            <div class="mb-6">
+              <h3 class="text-lg font-bold mb-3">Filtrer par tags</h3>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="tag in AVAILABLE_TAGS"
+                  :key="tag"
+                  :class="[
+                    'px-3 py-2 rounded-full text-sm font-semibold transition-all duration-300 hover:scale-105',
+                    selectedTags.includes(tag)
+                      ? 'text-white'
+                      : 'bg-white text-gray-700 border-2',
+                  ]"
+                  :style="{
+                    backgroundColor: selectedTags.includes(tag)
+                      ? '#FF1493'
+                      : 'transparent',
+                    borderColor: selectedTags.includes(tag)
+                      ? '#FF1493'
+                      : '#FF69B4',
+                    color: selectedTags.includes(tag) ? 'white' : '#FF1493',
+                  }"
+                  @click="
+                    selectedTags.includes(tag)
+                      ? selectedTags.splice(selectedTags.indexOf(tag), 1)
+                      : selectedTags.push(tag)
+                  "
+                >
+                  {{ tag }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Tris -->
+            <div class="flex flex-col sm:flex-row gap-6">
+              <!-- Tri par Points/Date/Aucun -->
+              <div>
+                <label class="text-lg font-bold block mb-2"> Trier par </label>
+                <div class="flex gap-2">
+                  <button
+                    :class="[
+                      'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+                      sortBy === 'none'
+                        ? 'text-white'
+                        : 'bg-white text-gray-700 border-2',
+                    ]"
+                    :style="{
+                      backgroundColor:
+                        sortBy === 'none' ? '#FF1493' : 'transparent',
+                      borderColor: sortBy === 'none' ? '#FF1493' : '#FF69B4',
+                      color: sortBy === 'none' ? 'white' : '#FF1493',
+                    }"
+                    @click="sortBy = 'none'"
+                  >
+                    Aucun
+                  </button>
+                  <button
+                    :class="[
+                      'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+                      sortBy === 'points'
+                        ? 'text-white'
+                        : 'bg-white text-gray-700 border-2',
+                    ]"
+                    :style="{
+                      backgroundColor:
+                        sortBy === 'points' ? '#FF1493' : 'transparent',
+                      borderColor: sortBy === 'points' ? '#FF1493' : '#FF69B4',
+                      color: sortBy === 'points' ? 'white' : '#FF1493',
+                    }"
+                    @click="sortBy = 'points'"
+                  >
+                    Points
+                  </button>
+                  <button
+                    :class="[
+                      'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+                      sortBy === 'date'
+                        ? 'text-white'
+                        : 'bg-white text-gray-700 border-2',
+                    ]"
+                    :style="{
+                      backgroundColor:
+                        sortBy === 'date' ? '#FF1493' : 'transparent',
+                      borderColor: sortBy === 'date' ? '#FF1493' : '#FF69B4',
+                      color: sortBy === 'date' ? 'white' : '#FF1493',
+                    }"
+                    @click="sortBy = 'date'"
+                  >
+                    Date
+                  </button>
+                </div>
+              </div>
+              <!-- Ordre croissant/Décroissant (visible seulement si tri actif) -->
+              <div v-if="sortBy !== 'none'">
+                <label class="text-sm font-semibold text-gray-700 block mb-2">
+                  Ordre
+                </label>
+                <div class="flex gap-2">
+                  <button
+                    :class="[
+                      'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+                      sortOrder === 'asc'
+                        ? 'text-white'
+                        : 'bg-white text-gray-700 border-2',
+                    ]"
+                    :style="{
+                      backgroundColor:
+                        sortOrder === 'asc' ? '#FF1493' : 'transparent',
+                      borderColor: sortOrder === 'asc' ? '#FF1493' : '#FF69B4',
+                      color: sortOrder === 'asc' ? 'white' : '#FF1493',
+                    }"
+                    @click="sortOrder = 'asc'"
+                  >
+                    {{ sortBy === "points" ? "⬆️ Croissant" : "📅 Ancien" }}
+                  </button>
+                  <button
+                    :class="[
+                      'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+                      sortOrder === 'desc'
+                        ? 'text-white'
+                        : 'bg-white text-gray-700 border-2',
+                    ]"
+                    :style="{
+                      backgroundColor:
+                        sortOrder === 'desc' ? '#FF1493' : 'transparent',
+                      borderColor: sortOrder === 'desc' ? '#FF1493' : '#FF69B4',
+                      color: sortOrder === 'desc' ? 'white' : '#FF1493',
+                    }"
+                    @click="sortOrder = 'desc'"
+                  >
+                    {{ sortBy === "points" ? "⬇️ Décroissant" : "📅 Récent" }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Badge nombre de résultats -->
+            <div class="mt-4 text-sm font-semibold text-gray-600">
+              {{ filteredAndSortedDeeds.length }} résultat(s)
+            </div>
+          </div>
 
           <div
             v-if="!validatedDeeds?.length"
