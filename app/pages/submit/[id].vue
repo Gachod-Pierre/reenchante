@@ -242,7 +242,9 @@ const pageStyle = {
               <option value="Australie">Australie</option>
               <option value="Nouvelle-Zélande">Nouvelle-Zélande</option>
               <option value="Fidji">Fidji</option>
-              <option value="Papouasie-Nouvelle-Guinée">Papouasie-Nouvelle-Guinée</option>
+              <option value="Papouasie-Nouvelle-Guinée">
+                Papouasie-Nouvelle-Guinée
+              </option>
               <option value="Îles Salomon">Îles Salomon</option>
               <option value="États-Unis">États-Unis</option>
               <option value="Canada">Canada</option>
@@ -329,6 +331,22 @@ const pageStyle = {
                 </div>
               </label>
             </div>
+          </div>
+
+          <!-- Message de sensibilisation -->
+          <div
+            class="mb-8 p-6 rounded-xl bg-[#FFE4F1]"
+          >
+            <p
+              class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap"
+            >Le réenchantement du monde sur ce site repose avant tout sur un
+              esprit communautaire fédérateur 🤝 et sur la bonne foi de chacun
+              💛 Merci de ne soumettre que des preuves authentiques : les
+              fausses preuves n'ont pas leur place ici ❌ Des vérifications sont
+              effectuées régulièrement, et toute preuve non conforme pourra être
+              supprimée 🔍🗑️ En jouant le jeu ensemble, tu participes vraiment à
+              rendre le monde un peu plus beau ! 🌍✨
+            </p>
           </div>
 
           <div class="flex gap-4 flex-col sm:flex-row">
