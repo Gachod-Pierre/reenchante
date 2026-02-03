@@ -41,7 +41,7 @@ function onFileChange(e: Event) {
   const target = e.target as HTMLInputElement;
   const selectedFile = target.files?.[0] ?? null;
   file.value = selectedFile;
-  
+
   // Créer une preview de l'image
   if (selectedFile) {
     const reader = new FileReader();
@@ -311,9 +311,7 @@ const pageStyle = {
                   <p class="text-gray-600 mb-2">
                     📸 Clique pour ajouter une photo
                   </p>
-                  <p class="text-xs text-gray-400">
-                    (JPG, PNG, WebP)
-                  </p>
+                  <p class="text-xs text-gray-400">(JPG, PNG, WebP)</p>
                 </div>
                 <!-- Fichier sélectionné -->
                 <div v-else class="space-y-4">
@@ -321,7 +319,7 @@ const pageStyle = {
                     :src="filePreview"
                     alt="Aperçu"
                     class="max-h-64 mx-auto rounded-lg object-cover"
-                  >
+                  />
                   <p class="text-sm text-gray-600 font-semibold">
                     ✅ {{ file?.name }}
                   </p>
@@ -354,41 +352,11 @@ const pageStyle = {
     </div>
 
     <!-- Modal de confirmation/erreur -->
-    <Teleport v-if="showModal" to="body">
-      <div
-        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-        @click="showModal = false"
-      >
-        <div
-          class="bg-white rounded-3xl p-8 max-w-md w-full border-2 shadow-2xl animate-fadeIn"
-          :style="{
-            borderColor: isSuccess ? '#FF69B4' : '#EF4444',
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          }"
-          @click.stop
-        >
-          <div class="text-center">
-            <p
-              class="text-2xl font-black mb-4"
-              :style="{ color: isSuccess ? '#FF1493' : '#EF4444' }"
-            >
-              {{ isSuccess ? "✅ Succès!" : "⚠️ Attention" }}
-            </p>
-            <p class="text-gray-700 text-lg mb-6">
-              {{ modalMessage }}
-            </p>
-            <button
-              v-if="!isSuccess"
-              class="px-6 py-2 rounded-lg font-bold text-white transition-all duration-300 hover:scale-105"
-              :style="{ backgroundColor: '#FF1493' }"
-              @click="showModal = false"
-            >
-              Fermer
-            </button>
-            <p v-else class="text-sm text-gray-500">Redirection en cours...</p>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <SubmissionModal
+      :is-open="showModal"
+      :message="modalMessage"
+      :is-success="isSuccess"
+      @close="showModal = false"
+    />
   </div>
 </template>
