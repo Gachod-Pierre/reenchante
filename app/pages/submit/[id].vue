@@ -306,7 +306,7 @@ const pageStyle = {
                 accept="image/*"
                 class="hidden"
                 @change="onFileChange"
-              />
+              >
               <label for="file-input" class="cursor-pointer">
                 <!-- Pas de fichier sélectionné -->
                 <div v-if="!filePreview" class="py-4">
@@ -321,7 +321,7 @@ const pageStyle = {
                     :src="filePreview"
                     alt="Aperçu"
                     class="max-h-64 mx-auto rounded-lg object-cover"
-                  />
+                  >
                   <p class="text-sm text-gray-600 font-semibold">
                     ✅ {{ file?.name }}
                   </p>

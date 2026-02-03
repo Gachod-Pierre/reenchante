@@ -44,7 +44,7 @@ function formatDate(dateString: string) {
       :src="item.evidence_url"
       :alt="item.good_deeds?.title"
       class="w-full h-full object-cover"
-    />
+    >
     <div
       v-else
       class="w-full h-full bg-gray-100 flex items-center justify-center"
@@ -66,7 +66,7 @@ function formatDate(dateString: string) {
         :src="item.profiles.avatar_url"
         :alt="item.profiles?.username ?? 'User'"
         class="w-10 h-10 rounded-full object-cover"
-      />
+      >
       <div
         v-else
         class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center font-bold text-gray-700 flex-shrink-0"
@@ -143,7 +143,7 @@ function formatDate(dateString: string) {
         :src="item.evidence_url"
         :alt="item.good_deeds?.title"
         class="w-full h-auto max-h-screen object-contain rounded-lg"
-      />
+      >
       <!-- Bouton fermer en fixed -->
       <button
         class="fixed top-6 right-6 z-[62] bg-black bg-opacity-50 hover:bg-opacity-75 text-white text-2xl font-bold w-12 h-12 rounded-full flex items-center justify-center transition-all leading-none"
