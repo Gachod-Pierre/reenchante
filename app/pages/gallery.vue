@@ -18,6 +18,7 @@ const { data: galleryItems } = await useAsyncData("gallery", async () => {
     .select(
       `
       id,
+      user_id,
       evidence_url,
       submission_text,
       selected_at,
