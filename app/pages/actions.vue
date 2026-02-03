@@ -49,6 +49,84 @@ const deeds = computed(() => {
   );
 });
 
+// État pour la recherche, filtrage et tri
+const search = ref<string>("");
+const selectedTags = ref<string[]>([]);
+const sortBy = ref<"points" | "date" | "difficulty" | "none">("none");
+const sortOrder = ref<"asc" | "desc">("desc");
+const difficultyLevel = ref<"facile" | "moyen" | "difficile" | "none">("none");
+
+// Computed pour les bonnes actions filtrées et triées
+const filteredAndSortedDeeds = computed(() => {
+  if (!deeds.value) return [];
+
+  // Filtrage par recherche (titre, description, date de création)
+  let filtered = deeds.value;
+  if (search.value.trim().length > 0) {
+    const keyword = search.value.toLowerCase().trim();
+    filtered = filtered.filter((deed) => {
+      const title = (deed.title ?? "").toLowerCase();
+      const description = (deed.description ?? "").toLowerCase();
+      const createdDate = new Date(deed.created_at)
+        .toLocaleDateString("fr-FR", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+        .toLowerCase();
+      return (
+        title.includes(keyword) ||
+        description.includes(keyword) ||
+        createdDate.includes(keyword)
+      );
+    });
+  }
+
+  // Filtrage par tags
+  if (selectedTags.value.length > 0) {
+    filtered = filtered.filter((deed) => {
+      const deedTags = deed.tags ?? [];
+      return selectedTags.value.some((tag) => deedTags.includes(tag));
+    });
+  }
+
+  // Tri
+  const sorted = [...filtered];
+  if (sortBy.value === "points") {
+    sorted.sort((a, b) => {
+      const pointsA = a.points ?? 0;
+      const pointsB = b.points ?? 0;
+      return sortOrder.value === "asc" ? pointsA - pointsB : pointsB - pointsA;
+    });
+  } else if (sortBy.value === "date") {
+    sorted.sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return sortOrder.value === "asc" ? dateA - dateB : dateB - dateA;
+    });
+  } else if (sortBy.value === "difficulty") {
+    const difficultyOrder = { facile: 1, moyen: 2, difficile: 3 };
+    if (difficultyLevel.value === "none") {
+      // Trier de facile à difficile
+      sorted.sort((a, b) => {
+        const diffA =
+          difficultyOrder[a.difficulty as keyof typeof difficultyOrder] ?? 0;
+        const diffB =
+          difficultyOrder[b.difficulty as keyof typeof difficultyOrder] ?? 0;
+        return diffA - diffB;
+      });
+    } else {
+      // Filtrer par niveau sélectionné
+      const filtered = sorted.filter(
+        (deed) => deed.difficulty === difficultyLevel.value,
+      );
+      return filtered;
+    }
+  }
+
+  return sorted;
+});
+
 // Vérifier la limite quotidienne au montage
 onMounted(async () => {
   if (user.value) {
@@ -187,19 +265,46 @@ const pageStyle = {
         <!-- Composant modal limite quotidienne -->
         <DailyLimitModal :is-visible="showDailyLimitModal" :type="modalType" />
 
-        <!-- Grille des actions -->
-        <div
-          class="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+        <!-- Composant de recherche -->
+        <DeedsSearchBar v-model="search" />
+
+        <!-- Composant de filtrage et tri -->
+        <ValidatedDeedsFilter
+          :selected-tags="selectedTags"
+          :sort-by="sortBy"
+          :sort-order="sortOrder"
+          :difficulty-level="difficultyLevel"
+          :filtered-count="filteredAndSortedDeeds.length"
+          @update:selected-tags="selectedTags = $event"
+          @update:sort-by="sortBy = $event"
+          @update:sort-order="sortOrder = $event"
+          @update:difficulty-level="difficultyLevel = $event"
+        />
+
+        <!-- Grille des actions avec paginación "Afficher plus" -->
+        <LoadMoreView
+          :items="filteredAndSortedDeeds"
+          :per-page="40"
+          load-more-text="Afficher plus"
+          all-loaded-text="Reste connecté, de nouvelles bonnes actions arriveront très prochainement ! 😉"
         >
-          <GoodDeedCard
-            v-for="(d, index) in deeds as GoodDeed[] | null"
-            :key="d?.id"
-            :deed="d!"
-            :is-disabled="!user || hasReachedDailyLimit"
-            :style="{ animationDelay: `${index * 0.1}s` }"
-            @add="d?.id && addDeed(d.id)"
-          />
-        </div>
+          <template #default="{ items, initialCount }">
+            <div
+              class="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+            >
+              <GoodDeedCard
+                v-for="(d, index) in items as GoodDeed[]"
+                :key="d.id"
+                :deed="d"
+                :is-disabled="!user || hasReachedDailyLimit"
+                :style="{
+                  animationDelay: `${index < initialCount ? 0 : (index - initialCount) * 0.1}s`,
+                }"
+                @add="d.id && addDeed(d.id)"
+              />
+            </div>
+          </template>
+        </LoadMoreView>
 
         <!-- Message si aucune action disponible -->
         <div
