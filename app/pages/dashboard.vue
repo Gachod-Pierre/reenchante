@@ -24,10 +24,6 @@ const { data: myDeeds } = await useAsyncData("myDeeds", async () => {
   return data;
 });
 
-// État du modal limite quotidienne
-const showDailyLimitModal = ref(false);
-const hasReachedDailyLimit = ref(false);
-
 // Pagination pour les bonnes actions validées
 const perPage = 3; // 2 lignes x 3 colonnes sur desktop
 
@@ -85,6 +81,25 @@ const { data: userProfile } = await useAsyncData("userProfile", async () => {
   return data;
 });
 
+// Vérifier la limite quotidienne IMMÉDIATEMENT au chargement de la page (avant onMounted)
+const { data: dailyValidationCount } = await useAsyncData(
+  "dailyValidationCount",
+  async () => {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const { count, error } = await supabase
+      .from("user_deeds")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId!)
+      .eq("status", "validated")
+      .gte("validated_at", today.toISOString());
+
+    if (error) throw error;
+    return count ?? 0;
+  },
+);
+
 // État pour l'édition du profil (utilisé par le composant UserProfileCard)
 const isEditingProfile = ref(false);
 const editedUsername = ref("");
@@ -96,6 +111,21 @@ const selectedTags = ref<string[]>([]);
 const sortBy = ref<"points" | "date" | "difficulty" | "none">("none");
 const sortOrder = ref<"asc" | "desc">("desc");
 const difficultyLevel = ref<"facile" | "moyen" | "difficile" | "none">("none");
+
+// État du modal et limite quotidienne
+const showDailyLimitModal = ref(false);
+const hasReachedDailyLimit = computed(() => (dailyValidationCount.value ?? 0) >= 5);
+
+// Afficher le modal quand la limite est atteinte
+watch(
+  hasReachedDailyLimit,
+  (isLimited) => {
+    if (isLimited) {
+      showDailyLimitModal.value = true;
+    }
+  },
+  { immediate: true },
+);
 
 // Initialiser les valeurs d'édition quand le profil se charge
 watch(userProfile, (newProfile) => {
@@ -115,20 +145,9 @@ async function handleSignOut() {
   await navigateTo("/login");
 }
 
-// Vérifier la limite quotidienne au montage
-onMounted(async () => {
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
-
-  const { count: validatedToday } = await supabase
-    .from("user_deeds")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId!)
-    .eq("status", "validated")
-    .gte("validated_at", today.toISOString());
-
-  if ((validatedToday ?? 0) >= 5) {
-    hasReachedDailyLimit.value = true;
+// Afficher le modal quand la limite est atteinte
+watch(hasReachedDailyLimit, (isLimited) => {
+  if (isLimited) {
     showDailyLimitModal.value = true;
   }
 });

@@ -128,7 +128,7 @@ function handleSignOut() {
           :alt="editedUsername || 'Avatar'"
           class="w-24 h-24 rounded-full object-cover border-2"
           :style="{ borderColor: '#FF69B4' }"
-        />
+        >
         <!-- Avatar existant en mode lecture -->
         <img
           v-else-if="userProfile?.avatar_url && !isEditingProfile"
@@ -136,7 +136,7 @@ function handleSignOut() {
           :alt="userProfile.username || 'Avatar'"
           class="w-24 h-24 rounded-full object-cover border-2"
           :style="{ borderColor: '#FF69B4' }"
-        />
+        >
         <!-- Placeholder -->
         <div
           v-else
@@ -161,7 +161,7 @@ function handleSignOut() {
             class="hidden"
             :disabled="isUploadingAvatar"
             @change="handleAvatarUpload"
-          />
+          >
         </label>
       </div>
 
@@ -195,7 +195,7 @@ function handleSignOut() {
                   ($event.target as HTMLInputElement).value,
                 )
               "
-            />
+            >
           </div>
 
           <!-- Boutons d'action (Modifier/Enregistrer/Annuler) -->

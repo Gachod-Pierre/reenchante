@@ -82,7 +82,7 @@ const getDifficultyLabel = (difficulty: string) => {
       :src="deed.evidence_url"
       alt="preuve"
       class="h-64 w-auto rounded-xl mb-6 object-cover"
-    />
+    >
 
     <!-- Points et Date en évidence -->
     <div class="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200 mb-4">
