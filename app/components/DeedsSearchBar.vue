@@ -18,7 +18,7 @@ defineEmits<{
       @input="
         $emit('update:modelValue', ($event.target as HTMLInputElement).value)
       "
-    />
+    >
     <svg
       v-if="!modelValue"
       class="search-bar__icon"

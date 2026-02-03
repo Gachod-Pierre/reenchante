@@ -41,8 +41,8 @@ function loadMore() {
   const nextItems = props.items.slice(
     loadedItems.value.length,
     loadedItems.value.length + props.perPage,
-  );
-  loadedItems.value.push(...nextItems);
+  ) as T[];
+  loadedItems.value = [...loadedItems.value, ...nextItems] as T[];
 }
 </script>
 
