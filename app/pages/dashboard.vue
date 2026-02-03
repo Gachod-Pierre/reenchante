@@ -112,6 +112,9 @@ const sortBy = ref<"points" | "date" | "difficulty" | "none">("none");
 const sortOrder = ref<"asc" | "desc">("desc");
 const difficultyLevel = ref<"facile" | "moyen" | "difficile" | "none">("none");
 
+// État pour la recherche
+const search = ref<string>("");
+
 // État du modal et limite quotidienne
 const showDailyLimitModal = ref(false);
 const hasReachedDailyLimit = computed(
@@ -158,8 +161,31 @@ watch(hasReachedDailyLimit, (isLimited) => {
 const filteredAndSortedDeeds = computed(() => {
   if (!validatedDeeds.value) return [];
 
-  // Filtrage par tags
+  // Filtrage par recherche (titre, description, date)
   let filtered = validatedDeeds.value;
+  if (search.value.trim().length > 0) {
+    const keyword = search.value.toLowerCase().trim();
+    filtered = filtered.filter((deed) => {
+      const title = (deed.good_deeds?.title ?? "").toLowerCase();
+      const description = (deed.good_deeds?.description ?? "").toLowerCase();
+      // Formatter la date avec le nom du mois en français
+      const validatedDateObj = new Date(deed.selected_at);
+      const validatedDate = validatedDateObj
+        .toLocaleDateString("fr-FR", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+        .toLowerCase();
+      return (
+        title.includes(keyword) ||
+        description.includes(keyword) ||
+        validatedDate.includes(keyword)
+      );
+    });
+  }
+
+  // Filtrage par tags
   if (selectedTags.value.length > 0) {
     filtered = filtered.filter((deed) => {
       const deedTags = deed.good_deeds?.tags ?? [];
@@ -314,6 +340,8 @@ const filteredAndSortedDeeds = computed(() => {
           >
             Mes bonnes actions validées
           </h2>
+          <!-- Composant de recherche -->
+          <DeedsSearchBar v-model="search" />
           <!-- Composant de filtrage et tri externalisé -->
           <ValidatedDeedsFilter
             v-if="validatedDeeds?.length"
