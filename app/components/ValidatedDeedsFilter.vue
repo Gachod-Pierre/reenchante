@@ -47,7 +47,7 @@ const toggleTag = (tag: string) => {
 
 <template>
   <div
-    class="mb-8 p-6 rounded-2xl border-2 backdrop-blur-sm"
+    class="mb-8 p-6 rounded-2xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl"
     :style="{
       borderColor: '#FF69B4',
       backgroundColor: 'rgba(255, 255, 255, 0.5)',

@@ -9,19 +9,38 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="search-bar">
+  <div
+    class="flex relative mb-6 w-full backdrop-blur-sm transition-all duration-300 hover:shadow-xl"
+  >
     <input
       :value="modelValue"
       type="text"
-      class="search-bar__input"
+      class="w-full px-4 py-3.5 pl-11 text-base border-2 rounded-xl transition-all duration-300 bg-white bg-opacity-95 font-inherit placeholder-[#999] focus:outline-none"
       placeholder="Rechercher par titre, description ou date..."
+      :style="{
+        borderColor: '#FF69B4',
+      }"
       @input="
         $emit('update:modelValue', ($event.target as HTMLInputElement).value)
       "
-    >
+      @focus="
+        (e) => {
+          (e.target as HTMLInputElement).style.borderColor = '#FF1493';
+          (e.target as HTMLInputElement).style.boxShadow =
+            '0 0 0 3px rgba(255, 20, 147, 0.1), 0 2px 8px rgba(0, 0, 0, 0.1)';
+        }
+      "
+      @blur="
+        (e) => {
+          (e.target as HTMLInputElement).style.borderColor = '#FF69B4';
+          (e.target as HTMLInputElement).style.boxShadow = 'none';
+        }
+      "
+    />
     <svg
       v-if="!modelValue"
-      class="search-bar__icon"
+      class="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+      :style="{ color: '#FF69B4' }"
       width="20"
       height="20"
       viewBox="0 0 24 24"
@@ -36,44 +55,3 @@ defineEmits<{
     </svg>
   </div>
 </template>
-
-<style scoped>
-.search-bar {
-  display: flex;
-  position: relative;
-  margin-bottom: 1.5rem;
-  width: 100%;
-}
-
-.search-bar__input {
-  width: 100%;
-  padding: 0.875rem 1rem 0.875rem 2.75rem;
-  font-size: 1rem;
-  border: 2px solid #ff69b4;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  background-color: rgba(255, 255, 255, 0.95);
-  font-family: inherit;
-}
-
-.search-bar__input:focus {
-  outline: none;
-  border-color: #ff1493;
-  box-shadow:
-    0 0 0 3px rgba(255, 20, 147, 0.1),
-    0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.search-bar__input::placeholder {
-  color: #999;
-}
-
-.search-bar__icon {
-  position: absolute;
-  left: 0.875rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #ff69b4;
-  pointer-events: none;
-}
-</style>
