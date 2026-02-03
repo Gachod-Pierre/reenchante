@@ -191,61 +191,14 @@ const pageStyle = {
         <div
           class="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
         >
-          <div
-            v-for="d in deeds as GoodDeed[] | null"
+          <GoodDeedCard
+            v-for="(d, index) in deeds as GoodDeed[] | null"
             :key="d?.id"
-            class="group backdrop-blur-sm border-2 rounded-2xl p-5 md:p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer"
-            :style="{
-              borderColor: '#FF69B4',
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-            }"
-          >
-            <!-- Header de la carte -->
-            <div class="mb-4">
-              <h3
-                class="text-lg md:text-xl font-bold mb-2 line-clamp-2"
-                :style="{ color: '#FF1493' }"
-              >
-                {{ d?.title }}
-              </h3>
-              <p class="text-gray-600 text-sm md:text-base leading-relaxed">
-                {{ d?.description }}
-              </p>
-            </div>
-
-            <!-- Points -->
-            <div
-              class="flex items-center justify-between mb-4 pt-4 border-t border-gray-200"
-            >
-              <div class="flex items-center gap-2">
-                <span class="text-2xl">✨</span>
-                <span class="font-bold text-lg text-gray-900">
-                  {{ d?.points }}
-                  <span class="text-sm text-gray-500">points</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- Bouton Ajouter -->
-            <button
-              :disabled="!user || hasReachedDailyLimit"
-              class="w-full py-2 px-4 rounded-lg font-semibold transition-all duration-300 transform text-white text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
-              :class="[
-                !user || hasReachedDailyLimit
-                  ? 'bg-gray-300'
-                  : 'bg-[#FF1493] hover:bg-[#D9187F] hover:shadow-lg hover:scale-105',
-              ]"
-              @click="d?.id && addDeed(d.id)"
-            >
-              {{
-                !user
-                  ? "Connecte-toi"
-                  : hasReachedDailyLimit
-                    ? "Limite atteinte"
-                    : "Ajouter"
-              }}
-            </button>
-          </div>
+            :deed="d!"
+            :is-disabled="!user || hasReachedDailyLimit"
+            :style="{ animationDelay: `${index * 0.1}s` }"
+            @add="d?.id && addDeed(d.id)"
+          />
         </div>
 
         <!-- Message si aucune action disponible -->
@@ -270,42 +223,5 @@ const pageStyle = {
 /* Smooth scroll behavior */
 html {
   scroll-behavior: smooth;
-}
-
-/* Animations */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.group {
-  opacity: 0;
-  animation: fadeInUp 0.5s ease-out forwards;
-}
-
-/* Stagger animation pour les cartes */
-.group:nth-child(1) {
-  animation-delay: 0s;
-}
-.group:nth-child(2) {
-  animation-delay: 0.1s;
-}
-.group:nth-child(3) {
-  animation-delay: 0.2s;
-}
-.group:nth-child(4) {
-  animation-delay: 0.3s;
-}
-.group:nth-child(5) {
-  animation-delay: 0.4s;
-}
-.group:nth-child(6) {
-  animation-delay: 0.5s;
 }
 </style>

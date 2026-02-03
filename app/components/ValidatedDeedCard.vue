@@ -85,10 +85,10 @@ const getDifficultyLabel = (difficulty: string) => {
     />
 
     <!-- Points et Date en évidence -->
-    <div class="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200 mb-4">
+    <div class="grid grid-cols-2 gap-3 mb-4">
       <div
-        class="text-center p-2 rounded-lg justify-center items-center flex"
-        :style="{ backgroundColor: 'rgba(255, 20, 147, 0.1)' }"
+        class="p-2 rounded-lg justify-center items-center flex"
+        :style="{ backgroundColor: 'rgba(255, 105, 180, 0.15)' }"
       >
         <p
           class="text-xl md:text-2xl font-black mb-0"
@@ -97,10 +97,7 @@ const getDifficultyLabel = (difficulty: string) => {
           +{{ deed.good_deeds?.points }} pts
         </p>
       </div>
-      <div
-        class="text-center p-2 rounded-lg justify-center items-center flex"
-        :style="{ backgroundColor: 'rgba(255, 20, 147, 0.1)' }"
-      >
+      <div class="text-center justify-center items-center flex">
         <p class="text-sm md:text-base font-bold text-gray-700 mb-0">
           {{
             new Date(deed.selected_at).toLocaleDateString("fr-FR", {
