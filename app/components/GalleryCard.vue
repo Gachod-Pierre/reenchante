@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { Database } from "../types/database.types";
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 type UserDeedSubmission = Database["public"]["Tables"]["user_deeds"]["Row"];
 
 type GalleryItem = UserDeedSubmission & {
@@ -26,6 +30,7 @@ function formatDate(dateString: string) {
 <template>
   <!-- Card principale -->
   <div
+    v-bind="$attrs"
     class="group relative border-2 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer h-screen max-h-[600px] md:max-h-[700px]"
     :style="{
       borderColor: '#FF69B4',
