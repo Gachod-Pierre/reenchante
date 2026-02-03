@@ -30,8 +30,7 @@ const showDailyLimitModal = ref(false);
 const hasReachedDailyLimit = ref(false);
 
 // Pagination pour les bonnes actions validées
-const currentPage = ref(1);
-const perPage = 3; // 2 lignes x 3 colonnes
+const perPage = 3; // 2 lignes x 3 colonnes sur desktop
 
 async function deleteDeed(deedId: string) {
   if (!confirm("Êtes-vous sûr de vouloir supprimer cette bonne action ?")) {
@@ -165,18 +164,6 @@ const filteredAndSortedDeeds = computed(() => {
   // Si sortBy === "none", pas de tri
 
   return sorted;
-});
-
-// Computed pour les bonnes actions affichées (paginées après filtrage/tri)
-const displayedValidatedDeeds = computed(() => {
-  const start = (currentPage.value - 1) * perPage;
-  const end = start + perPage;
-  return filteredAndSortedDeeds.value.slice(start, end);
-});
-
-// Computed pour le nombre total de pages (basé sur les données filtrées)
-const totalPages = computed(() => {
-  return Math.ceil((filteredAndSortedDeeds.value.length ?? 0) / perPage);
 });
 </script>
 
@@ -357,79 +344,90 @@ const totalPages = computed(() => {
               Aucune bonne action validée pour l'instant 🌱
             </p>
           </div>
-          <div
+
+          <!-- Composant de pagination externalisé -->
+          <PaginatedView
             v-else
-            class="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+            :items="filteredAndSortedDeeds"
+            :per-page="perPage"
           >
-            <div
-              v-for="deed in displayedValidatedDeeds"
-              :key="deed.id"
-              class="p-6 md:p-8 rounded-2xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:scale-105"
-              :style="{
-                borderColor: '#FF69B4',
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              }"
-            >
-              <h3
-                class="text-xl md:text-2xl font-bold mb-3"
-                :style="{ color: '#FF1493' }"
+            <template #default="{ items }">
+              <div
+                class="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
               >
-                {{ deed.good_deeds?.title }}
-              </h3>
-              <div class="mb-4 flex items-center gap-2">
-                <span class="text-gray-700 font-semibold">État :</span>
-                <span
-                  class="px-3 py-1 rounded-full text-sm font-medium"
+                <div
+                  v-for="deed in items"
+                  :key="deed.id"
+                  class="p-6 md:p-8 rounded-2xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:scale-105"
                   :style="{
-                    backgroundColor: 'rgba(255, 20, 147, 0.15)',
-                    color: '#FF1493',
+                    borderColor: '#FF69B4',
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
                   }"
                 >
-                  {{ getStatusLabel(deed.status) }}
-                </span>
-              </div>
-              <img
-                v-if="deed.evidence_url"
-                :src="deed.evidence_url"
-                alt="preuve"
-                class="h-64 w-auto rounded-xl mb-6 object-cover"
-              />
-
-              <!-- Points et Date en évidence -->
-              <div class="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200">
-                <div
-                  class="text-center p-2 rounded-lg justify-center items-center flex"
-                  :style="{ backgroundColor: 'rgba(255, 20, 147, 0.1)' }"
-                >
-                  <p
-                    class="text-xl md:text-2xl font-black mb-0"
+                  <h3
+                    class="text-xl md:text-2xl font-bold mb-3"
                     :style="{ color: '#FF1493' }"
                   >
-                    +{{ deed.good_deeds?.points }} pts
-                  </p>
-                </div>
-                <div
-                  class="text-center p-2 rounded-lg justify-center items-center flex"
-                  :style="{ backgroundColor: 'rgba(255, 20, 147, 0.1)' }"
-                >
-                  <p class="text-sm md:text-base font-bold text-gray-700 mb-0">
-                    {{
-                      new Date(deed.selected_at).toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    }}
-                  </p>
+                    {{ deed.good_deeds?.title }}
+                  </h3>
+                  <div class="mb-4 flex items-center gap-2">
+                    <span class="text-gray-700 font-semibold">État :</span>
+                    <span
+                      class="px-3 py-1 rounded-full text-sm font-medium"
+                      :style="{
+                        backgroundColor: 'rgba(255, 20, 147, 0.15)',
+                        color: '#FF1493',
+                      }"
+                    >
+                      {{ getStatusLabel(deed.status) }}
+                    </span>
+                  </div>
+                  <img
+                    v-if="deed.evidence_url"
+                    :src="deed.evidence_url"
+                    alt="preuve"
+                    class="h-64 w-auto rounded-xl mb-6 object-cover"
+                  />
+
+                  <!-- Points et Date en évidence -->
+                  <div
+                    class="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200"
+                  >
+                    <div
+                      class="text-center p-2 rounded-lg justify-center items-center flex"
+                      :style="{ backgroundColor: 'rgba(255, 20, 147, 0.1)' }"
+                    >
+                      <p
+                        class="text-xl md:text-2xl font-black mb-0"
+                        :style="{ color: '#FF1493' }"
+                      >
+                        +{{ deed.good_deeds?.points }} pts
+                      </p>
+                    </div>
+                    <div
+                      class="text-center p-2 rounded-lg justify-center items-center flex"
+                      :style="{ backgroundColor: 'rgba(255, 20, 147, 0.1)' }"
+                    >
+                      <p
+                        class="text-sm md:text-base font-bold text-gray-700 mb-0"
+                      >
+                        {{
+                          new Date(deed.selected_at).toLocaleDateString(
+                            "fr-FR",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )
+                        }}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <!-- Pagination -->
-          <div v-if="validatedDeeds && validatedDeeds.length > 0" class="mt-8">
-            <MyPagination v-model="currentPage" :total-pages="totalPages" />
-          </div>
+            </template>
+          </PaginatedView>
         </div>
       </div>
     </div>
