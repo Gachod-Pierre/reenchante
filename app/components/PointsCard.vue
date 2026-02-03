@@ -2,9 +2,12 @@
 // Props
 interface Props {
   totalPoints: number | null;
+  isOwner?: boolean;
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), {
+  isOwner: true,
+});
 </script>
 
 <template>
@@ -19,7 +22,9 @@ defineProps<Props>();
       class="text-xl md:text-2xl font-bold mb-3"
       :style="{ color: '#FF1493' }"
     >
-      Mes points de réenchantement
+      {{
+        isOwner ? "Mes points de réenchantement" : "Points de réenchantement"
+      }}
     </h2>
     <p class="text-4xl md:text-5xl font-black" :style="{ color: '#FF1493' }">
       ✨ {{ totalPoints ?? 0 }} points

@@ -16,6 +16,7 @@ interface Props {
   editedAvatarUrl: string;
   isUploadingAvatar: boolean;
   userId: string;
+  isOwner?: boolean;
 }
 
 // Emit
@@ -27,7 +28,9 @@ const emit = defineEmits<{
   profileUpdated: [];
 }>();
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  isOwner: true,
+});
 
 const supabase = useSupabaseClient<Database>();
 
@@ -128,7 +131,7 @@ function handleSignOut() {
           :alt="editedUsername || 'Avatar'"
           class="w-24 h-24 rounded-full object-cover border-2"
           :style="{ borderColor: '#FF69B4' }"
-        >
+        />
         <!-- Avatar existant en mode lecture -->
         <img
           v-else-if="userProfile?.avatar_url && !isEditingProfile"
@@ -136,7 +139,7 @@ function handleSignOut() {
           :alt="userProfile.username || 'Avatar'"
           class="w-24 h-24 rounded-full object-cover border-2"
           :style="{ borderColor: '#FF69B4' }"
-        >
+        />
         <!-- Placeholder -->
         <div
           v-else
@@ -161,7 +164,7 @@ function handleSignOut() {
             class="hidden"
             :disabled="isUploadingAvatar"
             @change="handleAvatarUpload"
-          >
+          />
         </label>
       </div>
 
@@ -177,7 +180,13 @@ function handleSignOut() {
             >
               {{ userProfile?.username || "Utilisateur" }}
             </h2>
-            <p class="text-gray-600 mb-4">{{ user?.email }}</p>
+            <p v-if="props.isOwner" class="text-gray-600 mb-4">
+              {{ user?.email }}
+            </p>
+            <p v-else class="text-gray-700 text-base mb-4">
+              Découvrez les bonnes actions réalisées par
+              <strong>{{ userProfile?.username }}</strong> !
+            </p>
           </div>
           <div v-else class="mb-4">
             <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -195,11 +204,11 @@ function handleSignOut() {
                   ($event.target as HTMLInputElement).value,
                 )
               "
-            >
+            />
           </div>
 
-          <!-- Boutons d'action (Modifier/Enregistrer/Annuler) -->
-          <div class="flex gap-2 flex-wrap">
+          <!-- Boutons d'action (Modifier/Enregistrer/Annuler) - seulement si isOwner -->
+          <div v-if="props.isOwner" class="flex gap-2 flex-wrap">
             <button
               v-if="!isEditingProfile"
               class="px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold text-sm md:text-base text-white transition-all duration-300 hover:scale-105 bg-[#FF1493] hover:bg-[#D9187F]"
@@ -224,8 +233,9 @@ function handleSignOut() {
           </div>
         </div>
 
-        <!-- Bouton Se déconnecter -->
+        <!-- Bouton Se déconnecter - seulement si isOwner -->
         <button
+          v-if="props.isOwner"
           class="w-full sm:w-auto px-4 py-2 md:px-6 md:py-3 rounded-lg font-bold transition-all duration-300 hover:shadow-lg hover:scale-105 border-2 border-red-500 bg-transparent text-red-500 hover:bg-red-500 hover:text-white text-sm md:text-base"
           @click="handleSignOut"
         >

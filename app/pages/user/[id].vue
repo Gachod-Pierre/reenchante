@@ -236,8 +236,7 @@ const pageStyle = {
         <!-- Bouton retour -->
         <NuxtLink
           to="/gallery"
-          class="inline-flex items-center gap-2 mb-8 text-sm font-semibold transition-all duration-300 hover:gap-3"
-          :style="{ color: '#FF1493' }"
+          class="font-semibold text-sm md:text-base px-4 py-2 mt-1 inline-flex rounded-lg items-center bg bg-transparent border-solid border-2 border-[#FF1493] text-[#FF1493] gap-2 mb-12 transition-all duration-300 hover:scale-105 hover:bg-[#FF1493] hover:text-white"
         >
           ← Retour à la galerie
         </NuxtLink>
@@ -265,41 +264,23 @@ const pageStyle = {
 
         <!-- Profil et Points en layout flex comme sur la dashboard -->
         <div v-else class="mb-12 flex flex-col lg:flex-row gap-6">
-          <!-- Card de profil read-only -->
-          <div
-            class="flex-1 p-8 rounded-2xl border-2"
-            :style="{
-              borderColor: '#FF69B4',
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-            }"
-          >
-            <div class="flex items-center gap-6 mb-6">
-              <img
-                v-if="userProfile.avatar_url"
-                :src="userProfile.avatar_url"
-                :alt="userProfile.username || 'Avatar'"
-                class="w-20 h-20 rounded-full object-cover"
-              />
-              <div
-                v-else
-                class="w-20 h-20 rounded-full bg-gray-300 flex items-center justify-center font-bold text-2xl text-gray-700"
-              >
-                {{ userProfile.username?.[0]?.toUpperCase() ?? "?" }}
-              </div>
-              <div>
-                <h1 class="text-3xl font-black" :style="{ color: '#FF1493' }">
-                  {{ userProfile.username }}
-                </h1>
-              </div>
-            </div>
-            <p class="text-gray-700 text-base">
-              Découvrez les bonnes actions réalisées par
-              <strong>{{ userProfile.username }}</strong> !
-            </p>
-          </div>
+          <!-- UserProfileCard en mode read-only (viewer) -->
+          <UserProfileCard
+            :user-profile="userProfile"
+            :user="{ email: '' }"
+            :is-editing-profile="false"
+            :edited-username="''"
+            :edited-avatar-url="''"
+            :is-uploading-avatar="false"
+            :user-id="userId as string"
+            :is-owner="false"
+          />
 
           <!-- Case 2: Points de réenchantement -->
-          <PointsCard :total-points="userProfile?.total_points ?? 0" />
+          <PointsCard
+            :total-points="userProfile?.total_points ?? 0"
+            :is-owner="false"
+          />
         </div>
 
         <!-- Titre section actions -->
