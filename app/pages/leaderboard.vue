@@ -85,7 +85,7 @@ onUnmounted(() => {
                     :src="user.avatar_url"
                     :alt="user.username"
                     class="w-full h-full object-cover"
-                  />
+                  >
                   <span v-else>{{
                     user.username.charAt(0).toUpperCase()
                   }}</span>
