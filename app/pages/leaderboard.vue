@@ -64,9 +64,10 @@ onUnmounted(() => {
 
             <!-- Leaderboard list -->
             <div v-else class="space-y-3">
-              <div
+              <NuxtLink
                 v-for="(user, index) in leaderboard"
                 :key="user.id"
+                :to="`/user/${user.id}`"
                 class="flex items-center gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
               >
                 <!-- Rank -->
@@ -105,7 +106,7 @@ onUnmounted(() => {
                   </p>
                   <p class="text-xs text-white/60">pts</p>
                 </div>
-              </div>
+              </NuxtLink>
 
               <!-- Empty state -->
               <div
