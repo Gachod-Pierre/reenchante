@@ -10,6 +10,7 @@ export default defineNuxtConfig({
     "@nuxtjs/supabase",
     "@nuxtjs/tailwindcss",
     "@tresjs/nuxt",
+    "@netlify/nuxt",
   ],
   supabase: {
     redirectOptions: {

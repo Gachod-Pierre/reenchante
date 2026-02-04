@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
+    "postbuild": "node -e \"require('fs').mkdirSync('.output/public', { recursive: true })\"",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
@@ -26,6 +27,7 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
+    "@netlify/nuxt": "^0.2.20",
     "@nuxtjs/supabase": "^2.0.3",
     "supabase": "^1.121.2"
   }
