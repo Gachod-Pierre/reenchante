@@ -12,7 +12,7 @@
 
     <!-- CLOUDS (low-poly) -->
     <!-- Cloud 1 (left) -->
-    <g opacity="0.8">
+    <g opacity="0.8" class="clouds-group">
       <polygon
         points="100,120 160,80 220,100 240,140 180,160 120,150"
         :fill="palette.clouds"
@@ -24,7 +24,7 @@
     </g>
 
     <!-- Cloud 2 (center-top) -->
-    <g opacity="0.7">
+    <g opacity="0.7" class="clouds-group" style="animation-delay: -2s">
       <polygon
         points="600,100 680,60 760,80 780,150 700,170 620,150"
         :fill="palette.clouds"
@@ -36,7 +36,7 @@
     </g>
 
     <!-- Cloud 3 (right) -->
-    <g opacity="0.75">
+    <g opacity="0.75" class="clouds-group" style="animation-delay: -4s">
       <polygon
         points="1100,130 1180,90 1260,110 1280,170 1200,180 1120,160"
         :fill="palette.clouds"
@@ -48,7 +48,7 @@
     </g>
 
     <!-- SUN -->
-    <g>
+    <g class="sun-group">
       <!-- Sun glow (subtle) -->
       <circle cx="1200" cy="150" r="80" :fill="palette.sun" opacity="0.4" />
       <!-- Sun core -->
@@ -138,7 +138,14 @@
     <!-- DISTANT TREES LAYER (small trees far away - APRÈS herbe pour être par-dessus) -->
     <g opacity="0.8">
       <!-- Distant tree 1 (left) -->
-      <g>
+      <g
+        class="tree-sway"
+        style="
+          transform-origin: 50% 100%;
+          transform-box: fill-box;
+          animation-delay: 0s;
+        "
+      >
         <!-- Foliage (petit triangle) -->
         <polygon points="120,450 160,450 140,380" :fill="palette.foliage" />
         <!-- Trunk (petit) -->
@@ -149,7 +156,14 @@
       </g>
 
       <!-- Distant tree 2 (center-left) -->
-      <g>
+      <g
+        class="tree-sway"
+        style="
+          transform-origin: 50% 100%;
+          transform-box: fill-box;
+          animation-delay: -1s;
+        "
+      >
         <!-- Foliage -->
         <polygon points="350,450 400,450 375,380" :fill="palette.foliage" />
         <!-- Trunk -->
@@ -160,7 +174,14 @@
       </g>
 
       <!-- Distant tree 3 (center) -->
-      <g>
+      <g
+        class="tree-sway"
+        style="
+          transform-origin: 50% 100%;
+          transform-box: fill-box;
+          animation-delay: -2s;
+        "
+      >
         <!-- Foliage -->
         <polygon points="680,450 740,450 710,370" :fill="palette.foliage" />
         <!-- Trunk -->
@@ -171,7 +192,14 @@
       </g>
 
       <!-- Distant tree 4 (center-right) -->
-      <g>
+      <g
+        class="tree-sway"
+        style="
+          transform-origin: 50% 100%;
+          transform-box: fill-box;
+          animation-delay: -3s;
+        "
+      >
         <!-- Foliage -->
         <polygon points="950,450 1000,450 975,380" :fill="palette.foliage" />
         <!-- Trunk -->
@@ -182,7 +210,14 @@
       </g>
 
       <!-- Distant tree 5 (right) -->
-      <g>
+      <g
+        class="tree-sway"
+        style="
+          transform-origin: 50% 100%;
+          transform-box: fill-box;
+          animation-delay: -4s;
+        "
+      >
         <!-- Foliage -->
         <polygon points="1280,450 1340,450 1310,370" :fill="palette.foliage" />
         <!-- Trunk -->
@@ -193,12 +228,17 @@
       </g>
     </g>
 
-    <!-- TREES (simple low-poly) - APRÈS l'herbe pour être par-dessus -->
+    <!-- TREES (animated) - APRÈS l'herbe pour être par-dessus -->
     <!-- Tree 1 (left) -->
-    <g>
-      <!-- Foliage (triangle) -->
+    <g
+      class="tree-sway"
+      style="
+        transform-origin: 50% 100%;
+        transform-box: fill-box;
+        animation-delay: 0s;
+      "
+    >
       <polygon points="150,500 290,500 220,350" :fill="palette.foliage" />
-      <!-- Foliage facets -->
       <polygon
         points="220,350 180,420 200,400"
         :fill="palette.foliage"
@@ -209,15 +249,19 @@
         :fill="palette.foliage"
         opacity="0.8"
       />
-      <!-- Trunk -->
       <polygon points="200,500 240,500 235,650 205,650" :fill="palette.trees" />
     </g>
 
     <!-- Tree 2 (center) -->
-    <g>
-      <!-- Foliage (triangle) -->
+    <g
+      class="tree-sway"
+      style="
+        transform-origin: 50% 100%;
+        transform-box: fill-box;
+        animation-delay: -1.5s;
+      "
+    >
       <polygon points="600,520 780,520 690,340" :fill="palette.foliage" />
-      <!-- Foliage facets -->
       <polygon
         points="690,340 640,430 660,410"
         :fill="palette.foliage"
@@ -228,15 +272,19 @@
         :fill="palette.foliage"
         opacity="0.8"
       />
-      <!-- Trunk - CORRIGÉ pour être centré sous le feuillage (x=690) -->
       <polygon points="670,520 710,520 705,680 675,680" :fill="palette.trees" />
     </g>
 
     <!-- Tree 3 (right) -->
-    <g>
-      <!-- Foliage (triangle) -->
+    <g
+      class="tree-sway"
+      style="
+        transform-origin: 50% 100%;
+        transform-box: fill-box;
+        animation-delay: -3s;
+      "
+    >
       <polygon points="1030,510 1170,510 1100,330" :fill="palette.foliage" />
-      <!-- Foliage facets -->
       <polygon
         points="1100,330 1050,420 1070,400"
         :fill="palette.foliage"
@@ -247,7 +295,6 @@
         :fill="palette.foliage"
         opacity="0.8"
       />
-      <!-- Trunk -->
       <polygon
         points="1080,510 1120,510 1115,650 1085,650"
         :fill="palette.trees"
@@ -335,5 +382,52 @@ circle {
   transition:
     fill 0.8s ease-in-out,
     stroke 0.8s ease-in-out;
+}
+
+/* Animations d'oscillement */
+@keyframes sway-gentle {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(8px);
+  }
+}
+
+@keyframes tree-sway {
+  0%,
+  100% {
+    transform: rotateZ(0deg);
+  }
+  50% {
+    transform: rotateZ(2deg);
+  }
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Appliquer les animations */
+.sun-group {
+  animation: bob 4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.clouds-group {
+  animation: sway-gentle 6s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.tree-sway {
+  animation: tree-sway 5s ease-in-out infinite;
+  transform-origin: center;
 }
 </style>
