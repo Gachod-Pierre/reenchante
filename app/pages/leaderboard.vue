@@ -24,7 +24,7 @@ const pointsForLandscape = computed(() => globalPoints.value);
 
 // Lifecycle
 onMounted(() => {
-  startPolling(5000); // Refresh every 5 seconds
+  startPolling();
 });
 
 onUnmounted(() => {
@@ -85,7 +85,7 @@ onUnmounted(() => {
                     :src="user.avatar_url"
                     :alt="user.username"
                     class="w-full h-full object-cover"
-                  />
+                  >
                   <span v-else>{{
                     user.username.charAt(0).toUpperCase()
                   }}</span>

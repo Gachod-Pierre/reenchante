@@ -22,9 +22,8 @@ export const useLeaderboard = () => {
   const client = useSupabaseClient();
   const leaderboard = ref<LeaderboardUser[]>([]);
   const globalPoints = ref(0);
-  const loading = ref(true); // Commencer en true pour éviter "aucun utilisateur"
+  const loading = ref(true);
   const error = ref<string | null>(null);
-  let pollingInterval: ReturnType<typeof setInterval> | null = null;
   let subscription: ReturnType<typeof client.channel> | null = null;
   let isInitialLoad = true;
 
@@ -90,8 +89,8 @@ export const useLeaderboard = () => {
     }
   };
 
-  // Démarrer le polling (rafraîchissement périodique) + subscription real-time pour points
-  const startPolling = (intervalMs = 5000) => {
+  // Démarrer la subscription real-time
+  const startPolling = () => {
     // Fetch initial
     fetchLeaderboard();
     fetchGlobalPoints();
@@ -128,12 +127,8 @@ export const useLeaderboard = () => {
     console.log("[startPolling] Real-time subscription démarrée");
   };
 
-  // Arrêter le polling et les subscriptions
+  // Arrêter la subscription
   const stopPolling = () => {
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-      pollingInterval = null;
-    }
     if (subscription) {
       client.removeChannel(subscription);
       subscription = null;
