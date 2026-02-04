@@ -111,8 +111,8 @@ const pageStyle = {
           }"
         >
           <p class="text-gray-700 text-sm md:text-base leading-relaxed">
-            Réenchanter est une plateforme communautaire où chacun peut partager
-            ses bonnes actions et contribuer à rendre le monde plus beau.
+            Réenchanter est une plateforme communautaire où chacun peut réaliser
+            ses bonnes actions et contribuer à rendre le monde un peu plus beau.
             <br >
             <br >
             Soumets tes preuves de bienveillance, accumule des points et grimpe

@@ -4,5 +4,11 @@
     <main class="layout-default__main">
       <slot />
     </main>
+    <!-- Footer (ne pas afficher sur la page d'accueil) -->
+    <MyFooter v-if="route.path !== '/'" />
   </div>
 </template>
+
+<script setup lang="ts">
+const route = useRoute();
+</script>
