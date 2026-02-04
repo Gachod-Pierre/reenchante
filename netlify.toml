@@ -1,14 +1,12 @@
 [build]
   command = "npm run build"
-  publish = ".output/public"
+  publish = "dist"
+  functions = ".output/server"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-[functions]
-  directory = ".output/server"
 
 [[headers]]
   for = "/_nuxt/*"
