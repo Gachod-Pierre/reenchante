@@ -151,8 +151,10 @@ onMounted(async () => {
   );
   if (!hasSeenInstructionModal) {
     showInstructionModal.value = true;
-    // Marquer le modal comme vu une fois qu'il est ouvert
-    localStorage.setItem("hasSeenInstructionModal", "true");
+    // Marquer le modal comme vu après un délai (après que l'utilisateur l'a fermé)
+    setTimeout(() => {
+      localStorage.setItem("hasSeenInstructionModal", "true");
+    }, 5000); // 5 secondes avant de marquer comme vu
   }
 
   // ✅ Animer le titre avec GSAP

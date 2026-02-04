@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, watch } from "vue";
 
 interface Props {
   isVisible: boolean;
@@ -30,6 +30,18 @@ const openModal = () => {
   showModal.value = true;
   emit("open");
 };
+
+// Watch les changements de isVisible
+watch(
+  () => props.isVisible,
+  (newValue) => {
+    if (newValue) {
+      delayTimer = setTimeout(() => {
+        showModal.value = true;
+      }, props.delay);
+    }
+  },
+);
 
 onMounted(() => {
   if (props.isVisible) {
