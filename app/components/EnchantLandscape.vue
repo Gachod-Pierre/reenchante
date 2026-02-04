@@ -326,3 +326,14 @@ const palette = computed(() => {
   return pal;
 });
 </script>
+
+<style scoped>
+/* Transition progressive des couleurs SVG */
+rect,
+polygon,
+circle {
+  transition:
+    fill 0.8s ease-in-out,
+    stroke 0.8s ease-in-out;
+}
+</style>
