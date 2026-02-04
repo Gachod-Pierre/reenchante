@@ -96,31 +96,36 @@ export const useLeaderboard = () => {
     fetchLeaderboard();
     fetchGlobalPoints();
 
-    // Polling du leaderboard et globalPoints toutes les 5s
-    pollingInterval = setInterval(() => {
-      fetchLeaderboard();
-      fetchGlobalPoints();
-    }, intervalMs);
-
-    // Subscription real-time pour globalPoints (sans polling)
+    // Subscription real-time pour leaderboard et globalPoints
     subscription = client
-      .channel("public:profiles")
+      .channel("public:profiles", {
+        config: {
+          broadcast: { self: true },
+          presence: { key: "profiles" },
+        },
+      })
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "profiles" },
         (payload) => {
-          console.log("[postgres_changes] Profile updated:", payload);
-          // Quand profiles change, mettre à jour globalPoints via RPC
+          console.log(
+            "[postgres_changes] Profile changed:",
+            payload.eventType,
+            payload,
+          );
+          // Quand profiles change, mettre à jour leaderboard ET globalPoints
+          fetchLeaderboard();
           fetchGlobalPoints();
         },
       )
       .subscribe((status) => {
         console.log(`[subscription] Status: ${status}`);
+        if (status === "SUBSCRIBED") {
+          console.log("[subscription] Successfully subscribed to profiles");
+        }
       });
 
-    console.log(
-      "[startPolling] Leaderboard polling et real-time subscription démarrés",
-    );
+    console.log("[startPolling] Real-time subscription démarrée");
   };
 
   // Arrêter le polling et les subscriptions
