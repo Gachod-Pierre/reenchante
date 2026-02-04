@@ -71,6 +71,7 @@ const getDifficultyLabel = (difficulty: string) => {
         :style="{
           backgroundColor: 'rgba(255, 20, 147, 0.15)',
           color: '#FF1493',
+          borderBottom: '1px solid #FF69B4',
         }"
       >
         Monde Réenchanté

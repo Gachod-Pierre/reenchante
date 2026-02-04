@@ -23,6 +23,10 @@ const continentName = computed(() => {
   return props.continentId ? getContinentName(props.continentId) : "";
 });
 
+// État pour le lightbox
+const showLightbox = ref(false);
+const selectedImageUrl = ref<string | null>(null);
+
 // ✅ Fonction pour corriger les URLs d'avatar Google
 const getAvatarUrl = (url: string | null | undefined): string => {
   if (!url) return "";
@@ -32,6 +36,12 @@ const getAvatarUrl = (url: string | null | undefined): string => {
     return url.includes("=s") ? url : `${url}=s96`;
   }
   return url;
+};
+
+// Fonction pour ouvrir le lightbox
+const openImageLightbox = (imageUrl: string) => {
+  selectedImageUrl.value = imageUrl;
+  showLightbox.value = true;
 };
 </script>
 
@@ -106,40 +116,56 @@ const getAvatarUrl = (url: string | null | undefined): string => {
           <div
             v-for="deed in userDeeds"
             :key="deed.id"
-            class="border rounded-lg p-4"
+            class="border border-[#FF69B4] rounded-lg p-4"
             style="contain: content"
           >
             <!-- En-tête avec utilisateur et action -->
-            <div class="flex items-start gap-3 mb-3">
-              <img
-                v-if="deed.profiles?.avatar_url"
-                :src="getAvatarUrl(deed.profiles.avatar_url)"
-                :alt="deed.profiles.full_name ?? 'User'"
-                class="w-10 h-10 rounded-full object-cover"
-              >
-              <div class="flex-1">
-                <p class="font-semibold text-gray-900">
-                  {{
-                    deed.profiles?.full_name ||
-                    deed.profiles?.username ||
-                    "Anonyme"
-                  }}
-                </p>
-                <p class="text-sm text-gray-600">
-                  {{ deed.good_deeds?.title || "Action" }}
-                </p>
+            <div class="flex flex-col gap-3">
+              <!-- Groupe user + points -->
+              <div class="flex items-center justify-between gap-3">
+                <!-- Groupe avatar + nom -->
+                <div class="flex items-center gap-3 min-w-0">
+                  <img
+                    v-if="deed.profiles?.avatar_url"
+                    :src="getAvatarUrl(deed.profiles.avatar_url)"
+                    :alt="deed.profiles.full_name ?? 'User'"
+                    class="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                  >
+                  <NuxtLink
+                    :to="`/user/${deed.user_id}`"
+                    class="font-semibold text-gray-900 transition-all duration-300 hover:underline truncate"
+                    :style="{ color: '#FF1493' }"
+                    @click.stop
+                  >
+                    {{
+                      deed.profiles?.username ||
+                      "Anonyme"
+                    }}
+                  </NuxtLink>
+                </div>
+                <!-- Points -->
+                <div
+                  class="text-right bg-[#ff69b426] p-3 rounded-lg flex-shrink-0"
+                >
+                  <p
+                    class="text-gray-900 text-lg mb-0 font-bold whitespace-nowrap"
+                  >
+                    ✨ +{{ deed.points_awarded ?? deed.good_deeds?.points ?? 0 }}
+                    <span class="text-sm text-gray-500">pts</span>
+                  </p>
+                </div>
               </div>
-              <div class="text-right">
-                <p class="font-bold text-pink-500 text-lg">
-                  +{{ deed.points_awarded ?? deed.good_deeds?.points ?? 0 }} pts
-                </p>
-              </div>
+              <!-- Titre de l'action -->
+              <p class="text-lg text-gray-700">
+                <strong>{{ deed.good_deeds?.title || "Action" }}</strong>
+              </p>
             </div>
-
             <!-- Détails de la soumission -->
             <div class="space-y-2 text-sm">
-              <p v-if="deed.submission_text" class="text-gray-700">
-                {{ deed.submission_text }}
+              <p v-if="deed.submission_text" class="text-gray-600 text-base">
+                Le Réenchanteur dit : "{{
+                  deed.submission_text
+                }}"
               </p>
               <div class="flex items-center gap-2 text-gray-500">
                 <span>📍 {{ deed.country }}</span>
@@ -148,14 +174,12 @@ const getAvatarUrl = (url: string | null | undefined): string => {
                 </span>
               </div>
               <div v-if="deed.evidence_url" class="mt-2">
-                <a
-                  :href="deed.evidence_url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-pink-500 hover:text-pink-700 text-sm underline"
+                <button
+                  class="text-pink-500 hover:text-pink-700 text-sm hover:underline font-semibold"
+                  @click="openImageLightbox(deed.evidence_url)"
                 >
-                  Voir la preuve
-                </a>
+                  Voir la preuve 🖼️
+                </button>
               </div>
             </div>
 
@@ -163,9 +187,14 @@ const getAvatarUrl = (url: string | null | undefined): string => {
             <div class="mt-3 flex gap-2">
               <span
                 v-if="deed.status === 'validated'"
-                class="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full"
+                class="inline-block px-3 py-1 text-xs rounded-full"
+                :style="{
+                  backgroundColor: 'rgba(255, 20, 147, 0.15)',
+                  color: '#FF1493',
+                  borderBottom: '1px solid #FF69B4',
+                }"
               >
-                ✓ Validé
+                Monde Réenchanté
               </span>
               <span
                 v-else-if="deed.status === 'completed'"
@@ -179,6 +208,29 @@ const getAvatarUrl = (url: string | null | undefined): string => {
       </div>
     </div>
   </Transition>
+
+  <!-- Modal Lightbox -->
+  <Teleport to="body">
+    <div
+      v-if="showLightbox"
+      class="fixed inset-0 z-[502] bg-black bg-opacity-75 flex items-center justify-center p-4"
+      @click="showLightbox = false"
+    >
+      <img
+        v-if="selectedImageUrl"
+        :src="selectedImageUrl"
+        alt="Preuve"
+        class="w-full h-auto max-h-screen object-contain rounded-lg"
+      >
+      <!-- Bouton fermer en fixed -->
+      <button
+        class="fixed top-6 right-6 z-[62] bg-black bg-opacity-50 hover:bg-opacity-75 text-white text-2xl font-bold w-12 h-12 rounded-full flex items-center justify-center transition-all leading-none"
+        @click.stop="showLightbox = false"
+      >
+        ✕
+      </button>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>

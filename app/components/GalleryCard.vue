@@ -58,7 +58,7 @@ function formatDate(dateString: string) {
       :style="{
         background:
           'linear-gradient(to bottom, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.95) 80%, transparent 95%)',
-        paddingBottom: '80px',
+        paddingBottom: '40px',
       }"
     >
       <img
@@ -119,7 +119,7 @@ function formatDate(dateString: string) {
         >
           <span class="text-2xl">✨</span>
           <span class="font-bold text-gray-900 text-base">
-            +{{ item.good_deeds?.points }} pts
+            +{{ item.good_deeds?.points }} <span class="text-sm text-gray-500">pts</span>
           </span>
         </div>
 

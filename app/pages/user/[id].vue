@@ -4,6 +4,7 @@ import type { Database } from "../../types/database.types";
 definePageMeta({ middleware: ["auth"] });
 
 const route = useRoute();
+const router = useRouter();
 const supabase = useSupabaseClient<Database>();
 
 // Get current authenticated user
@@ -234,12 +235,12 @@ const pageStyle = {
     <div class="pt-16 px-4 md:px-8 lg:px-12 pb-12">
       <div class="max-w-6xl mx-auto">
         <!-- Bouton retour -->
-        <NuxtLink
-          to="/gallery"
+        <button
           class="font-semibold text-sm md:text-base px-4 py-2 mt-1 inline-flex rounded-lg items-center bg bg-transparent border-solid border-2 border-[#FF1493] text-[#FF1493] gap-2 mb-12 transition-all duration-300 hover:scale-105 hover:bg-[#FF1493] hover:text-white"
+          @click="router.back()"
         >
-          ← Retour à la galerie
-        </NuxtLink>
+          ← Retour
+        </button>
 
         <!-- Loading state -->
         <div v-if="dataLoading" class="text-center py-12">
