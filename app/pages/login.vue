@@ -8,6 +8,7 @@ const password = ref("");
 const errorMsg = ref("");
 const isSignUp = ref(false);
 const loading = ref(false);
+const planetOffset = ref(0);
 
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
@@ -15,6 +16,23 @@ const user = useSupabaseUser();
 const redirectUrl = `${
   typeof window !== "undefined" ? window.location.origin : ""
 }/confirm`;
+
+onMounted(() => {
+  window.addEventListener("scroll", handleParallax);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("scroll", handleParallax);
+});
+
+const handleParallax = () => {
+  const scrollY = window.scrollY;
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+
+  // Limit parallax movement to prevent overlap with footer
+  const parallaxAmount = Math.min(scrollY * 0.3, maxScroll * 0.3);
+  planetOffset.value = parallaxAmount;
+};
 
 async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
@@ -72,23 +90,25 @@ const pageStyle = {
 
 <template>
   <div :style="pageStyle" class="relative overflow-hidden">
-    <!-- Logo en arrière-plan (fixe en bas) -->
+    <!-- Logo en arrière-plan avec parallax -->
     <div
-      class="fixed lg:bottom-[-30%] md:bottom-[-20%] z-0 pointer-events-none planet-animation"
+      class="fixed lg:bottom-[-30%] md:bottom-[-20%] lg:right-[-30%] z-5 pointer-events-none planet-animation"
+      :style="{ transform: `translateY(${planetOffset}px)` }"
     >
-      <img
-        src="/images/réenchanter.png"
-        alt="Réenchanter"
-        class="w-full h-full object-cover"
-        style="transform: translateY(50%)"
-      >
+      <div class="w-full h-full flex items-center justify-center">
+        <NuxtImg
+          src="/images/réenchanter.png"
+          alt="Réenchanter"
+          class="w-full h-full min-w-[100rem] object-cover planet-rotate"
+        />
+      </div>
     </div>
 
     <!-- Contenu principal (au-dessus du logo) -->
     <div
       class="min-h-screen flex items-center justify-center px-4 py-12 relative z-10"
     >
-      <div class="w-full max-w-lg">
+      <div class="w-full max-w-3xl">
         <!-- Titre -->
         <div class="text-center mb-12 mt-16">
           <h1
@@ -135,7 +155,7 @@ const pageStyle = {
               :style="{ borderColor: '#FF69B4' }"
             >
               <button
-                class="flex-1 py-3 font-bold transition-all duration-300"
+                class="flex-1 py-3 font-bold transition-all duration-75"
                 :style="{
                   color: !isSignUp ? '#FF1493' : '#999',
                   borderBottom: !isSignUp ? '3px solid #FF1493' : 'none',
@@ -146,7 +166,7 @@ const pageStyle = {
                 Connexion
               </button>
               <button
-                class="flex-1 py-3 font-bold transition-all duration-300"
+                class="flex-1 py-3 font-bold transition-all duration-75"
                 :style="{
                   color: isSignUp ? '#FF1493' : '#999',
                   borderBottom: isSignUp ? '3px solid #FF1493' : 'none',
@@ -171,8 +191,10 @@ const pageStyle = {
                   v-model="email"
                   type="email"
                   placeholder="ton@email.com"
-                  class="w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-colors duration-300"
-                  :style="{ borderColor: '#FF69B4' }"
+                  class="w-full px-8 py-3 border-2 rounded-lg outline-none transition-all duration-300 text-base focus:bg-gray-100 focus:shadow-[0_0_0_3px_rgba(255,105,180,0.2)]"
+                  :style="{
+                    borderColor: '#FF69B4',
+                  }"
                 >
               </div>
 
@@ -187,8 +209,10 @@ const pageStyle = {
                   v-model="password"
                   type="password"
                   placeholder="••••••••"
-                  class="w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-colors duration-300"
-                  :style="{ borderColor: '#FF69B4' }"
+                  class="w-full px-8 py-3 border-2 rounded-lg outline-none transition-all duration-300 text-base focus:bg-gray-100 focus:shadow-[0_0_0_3px_rgba(255,105,180,0.2)]"
+                  :style="{
+                    borderColor: '#FF69B4',
+                  }"
                 >
               </div>
             </div>
@@ -211,9 +235,11 @@ const pageStyle = {
             </div>
 
             <!-- Boutons -->
-            <div class="space-y-3">
+            <div
+              class="space-y-3 flex flex-col pt-5 items-center md:max-w-sm md:mx-auto"
+            >
               <button
-                class="w-full px-6 py-3 rounded-lg font-bold text-white transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full md:w-full px-6 py-3 rounded-lg font-bold text-white transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                 :style="{ backgroundColor: '#FF1493' }"
                 :disabled="loading"
                 @click="isSignUp ? signUp() : signIn()"
@@ -228,7 +254,7 @@ const pageStyle = {
               </button>
 
               <button
-                class="w-full px-6 py-3 rounded-lg font-bold transition-all duration-300 hover:scale-105 border-2 flex items-center justify-center gap-3"
+                class="w-full md:w-full px-6 py-3 rounded-lg font-bold transition-all duration-300 hover:scale-105 border-2 flex items-center justify-center gap-3"
                 :style="{
                   borderColor: '#FF69B4',
                   color: '#FF1493',
@@ -307,5 +333,19 @@ const pageStyle = {
 
 .planet-animation {
   animation: fadeInMoveUp 1s ease-in-out forwards;
+}
+
+@keyframes rotatePlanet {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.planet-rotate {
+  animation: rotatePlanet 150s linear infinite;
+  transform-origin: center;
 }
 </style>

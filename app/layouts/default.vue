@@ -5,7 +5,7 @@
       <slot />
     </main>
     <!-- Footer (ne pas afficher sur la page d'accueil) -->
-    <MyFooter v-if="route.path !== '/'" />
+    <MyFooter v-if="route.path !== '/'" class="relative z-[1000]"/>
   </div>
 </template>
 
