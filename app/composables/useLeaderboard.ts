@@ -22,7 +22,7 @@ export const useLeaderboard = () => {
   const client = useSupabaseClient();
   const leaderboard = ref<LeaderboardUser[]>([]);
   const globalPoints = ref(0);
-  const loading = ref(false);
+  const loading = ref(true); // Commencer en true pour éviter "aucun utilisateur"
   const error = ref<string | null>(null);
   let pollingInterval: ReturnType<typeof setInterval> | null = null;
   let subscription: ReturnType<typeof client.channel> | null = null;

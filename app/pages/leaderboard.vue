@@ -125,78 +125,85 @@ onUnmounted(() => {
               Points Globaux
             </h2>
 
+            <!-- Loading state -->
+            <div v-if="loading" class="text-center text-white/80 py-8">
+              <p>Chargement...</p>
+            </div>
+
             <!-- Global points display -->
-            <div class="mb-6 p-4 rounded-lg bg-white/5 text-center">
-              <p class="text-white/80 text-sm mb-2">Somme totale</p>
-              <p class="text-4xl md:text-5xl font-black text-[#FF1493]">
-                {{ globalPoints.toLocaleString("fr-FR") }}
-              </p>
-            </div>
-
-            <!-- Tier info -->
-            <div class="mb-6 p-4 rounded-lg bg-white/5">
-              <p class="text-white/80 text-sm mb-1">Étape actuelle</p>
-              <p class="text-xl md:text-2xl font-black text-white mb-3">
-                {{ currentTier.currentLabel }}
-              </p>
-
-              <!-- Progress bar -->
-              <div
-                class="w-full bg-white/10 rounded-full h-2 overflow-hidden mb-3"
-              >
-                <div
-                  class="bg-gradient-to-r from-[#FF1493] to-[#FF69B4] h-full transition-all duration-300"
-                  :style="{ width: `${currentTier.tierProgress * 100}%` }"
-                />
+            <div v-else>
+              <div class="mb-6 p-4 rounded-lg bg-white/5 text-center">
+                <p class="text-white/80 text-sm mb-2">Somme totale</p>
+                <p class="text-4xl md:text-5xl font-black text-[#FF1493]">
+                  {{ globalPoints.toLocaleString("fr-FR") }}
+                </p>
               </div>
 
-              <!-- Progress text -->
-              <div class="flex justify-between text-xs text-white/60 mb-2">
-                <span>{{
-                  currentTier.currentThreshold.toLocaleString("fr-FR")
-                }}</span>
-                <span>{{
-                  currentTier.nextThreshold.toLocaleString("fr-FR")
-                }}</span>
-              </div>
+              <!-- Tier info -->
+              <div class="mb-6 p-4 rounded-lg bg-white/5">
+                <p class="text-white/80 text-sm mb-1">Étape actuelle</p>
+                <p class="text-xl md:text-2xl font-black text-white mb-3">
+                  {{ currentTier.currentLabel }}
+                </p>
 
-              <!-- Next tier preview -->
-              <p class="text-sm text-white/80">
-                Prochaine étape:
-                <span class="font-semibold text-white">{{
-                  currentTier.nextLabel
-                }}</span>
-              </p>
-            </div>
-
-            <!-- Tier milestones (mini chips) -->
-            <div class="space-y-2">
-              <p class="text-white/80 text-sm font-semibold mb-3">
-                Jalons de réenchantement
-              </p>
-              <div class="space-y-2">
+                <!-- Progress bar -->
                 <div
-                  v-for="(tier, index) in TIERS"
-                  :key="index"
-                  class="flex items-center gap-3 p-2 rounded text-xs transition-all"
-                  :class="[
-                    globalPoints >= tier.threshold
-                      ? 'bg-[#FF1493]/20 text-white'
-                      : 'bg-white/5 text-white/50',
-                  ]"
+                  class="w-full bg-white/10 rounded-full h-2 overflow-hidden mb-3"
                 >
                   <div
-                    class="w-2 h-2 rounded-full flex-shrink-0"
-                    :class="
-                      globalPoints >= tier.threshold
-                        ? 'bg-[#FF1493]'
-                        : 'bg-white/30'
-                    "
+                    class="bg-gradient-to-r from-[#FF1493] to-[#FF69B4] h-full transition-all duration-300"
+                    :style="{ width: `${currentTier.tierProgress * 100}%` }"
                   />
-                  <span class="flex-1">{{ tier.label }}</span>
-                  <span class="font-semibold">{{
-                    tier.threshold.toLocaleString("fr-FR")
+                </div>
+
+                <!-- Progress text -->
+                <div class="flex justify-between text-xs text-white/60 mb-2">
+                  <span>{{
+                    currentTier.currentThreshold.toLocaleString("fr-FR")
                   }}</span>
+                  <span>{{
+                    currentTier.nextThreshold.toLocaleString("fr-FR")
+                  }}</span>
+                </div>
+
+                <!-- Next tier preview -->
+                <p class="text-sm text-white/80">
+                  Prochaine étape:
+                  <span class="font-semibold text-white">{{
+                    currentTier.nextLabel
+                  }}</span>
+                </p>
+              </div>
+
+              <!-- Tier milestones (mini chips) -->
+              <div class="space-y-2">
+                <p class="text-white/80 text-sm font-semibold mb-3">
+                  Jalons de réenchantement
+                </p>
+                <div class="space-y-2">
+                  <div
+                    v-for="(tier, index) in TIERS"
+                    :key="index"
+                    class="flex items-center gap-3 p-2 rounded text-xs transition-all"
+                    :class="[
+                      globalPoints >= tier.threshold
+                        ? 'bg-[#FF1493]/20 text-white'
+                        : 'bg-white/5 text-white/50',
+                    ]"
+                  >
+                    <div
+                      class="w-2 h-2 rounded-full flex-shrink-0"
+                      :class="
+                        globalPoints >= tier.threshold
+                          ? 'bg-[#FF1493]'
+                          : 'bg-white/30'
+                      "
+                    />
+                    <span class="flex-1">{{ tier.label }}</span>
+                    <span class="font-semibold">{{
+                      tier.threshold.toLocaleString("fr-FR")
+                    }}</span>
+                  </div>
                 </div>
               </div>
             </div>
