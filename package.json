@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
-    "postbuild": "node -e \"require('fs').mkdirSync('.output/public', { recursive: true })\"",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
