@@ -192,7 +192,7 @@ const pageStyle = {
             </label>
             <select
               v-model="country"
-              class="w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-colors duration-300"
+              class="w-full px-4 py-3 border-2 rounded-lg outline-none transition-all duration-300 focus:bg-gray-100 focus:shadow-[0_0_0_3px_rgba(255,105,180,0.2)]"
               :style="{ borderColor: '#FF69B4' }"
             >
               <option value="">-- Sélectionne ton pays --</option>
@@ -282,7 +282,7 @@ const pageStyle = {
             <textarea
               v-model="submissionText"
               rows="5"
-              class="w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-colors duration-300 resize-none"
+              class="w-full px-4 py-3 border-2 rounded-lg outline-none transition-all duration-300 resize-none focus:bg-gray-100 focus:shadow-[0_0_0_3px_rgba(255,105,180,0.2)]"
               :style="{ borderColor: '#FF69B4' }"
               placeholder="Raconte-nous plus sur ta bonne action..."
             />
@@ -306,7 +306,7 @@ const pageStyle = {
                 accept="image/*"
                 class="hidden"
                 @change="onFileChange"
-              >
+              />
               <label for="file-input" class="cursor-pointer">
                 <!-- Pas de fichier sélectionné -->
                 <div v-if="!filePreview" class="py-4">
@@ -321,7 +321,7 @@ const pageStyle = {
                     :src="filePreview"
                     alt="Aperçu"
                     class="max-h-64 mx-auto rounded-lg object-cover"
-                  >
+                  />
                   <p class="text-sm text-gray-600 font-semibold">
                     ✅ {{ file?.name }}
                   </p>
@@ -334,12 +334,11 @@ const pageStyle = {
           </div>
 
           <!-- Message de sensibilisation -->
-          <div
-            class="mb-8 p-6 rounded-xl bg-[#FFE4F1]"
-          >
+          <div class="mb-8 p-6 rounded-xl bg-[#FFE4F1]">
             <p
               class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap"
-            >Le réenchantement du monde sur ce site repose avant tout sur un
+            >
+              Le réenchantement du monde sur ce site repose avant tout sur un
               esprit communautaire fédérateur 🤝 et sur la bonne foi de chacun
               💛 Merci de ne soumettre que des preuves authentiques : les
               fausses preuves n'ont pas leur place ici ❌ Des vérifications sont

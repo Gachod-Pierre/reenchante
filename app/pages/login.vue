@@ -191,7 +191,7 @@ const pageStyle = {
                   v-model="email"
                   type="email"
                   placeholder="ton@email.com"
-                  class="w-full px-8 py-3 border-2 rounded-lg outline-none transition-all duration-300 text-base focus:bg-gray-100 focus:shadow-[0_0_0_3px_rgba(255,105,180,0.2)]"
+                  class="w-full px-3 md:px-5 lg:px-8 py-3 border-2 rounded-lg outline-none transition-all duration-300 text-base focus:bg-gray-100 focus:shadow-[0_0_0_3px_rgba(255,105,180,0.2)]"
                   :style="{
                     borderColor: '#FF69B4',
                   }"
@@ -209,7 +209,7 @@ const pageStyle = {
                   v-model="password"
                   type="password"
                   placeholder="••••••••"
-                  class="w-full px-8 py-3 border-2 rounded-lg outline-none transition-all duration-300 text-base focus:bg-gray-100 focus:shadow-[0_0_0_3px_rgba(255,105,180,0.2)]"
+                  class="w-full px-3 md:px-5 lg:px-8 py-3 border-2 rounded-lg outline-none transition-all duration-300 text-base focus:bg-gray-100 focus:shadow-[0_0_0_3px_rgba(255,105,180,0.2)]"
                   :style="{
                     borderColor: '#FF69B4',
                   }"
