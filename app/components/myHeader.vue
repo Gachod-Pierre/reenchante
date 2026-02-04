@@ -64,6 +64,15 @@ const headerTransform = computed(() => {
 const isLinkActive = (path: string) => {
   return route.path === path;
 };
+
+// Calculer la marge droite (plus grande sur leaderboard pour la scrollbar)
+// const headerMarginRight = computed(() => {
+//   return route.path === "/leaderboard" ? "mr-[32px]" : "mr-4";
+// });
+
+// const headerMarginRightMobile = computed(() => {
+//   return route.path === "/leaderboard" ? "mr-[32px]" : "mr-4";
+// });
 </script>
 
 <template>
@@ -74,7 +83,8 @@ const isLinkActive = (path: string) => {
   >
     <!-- DESKTOP: Bulle ovale du header -->
     <div
-      class="hidden lg:flex items-center justify-center mt-6 px-8 py-4 ml-auto mr-4 bg-[#ff69b4] rounded-full w-fit transition-transform duration-300 ease-in-out"
+      class="
+        hidden lg:flex items-center justify-center mt-6 mr-4 px-8 py-4 ml-auto bg-[#ff69b4] rounded-full w-fit transition-transform duration-300 ease-in-out"
       :style="{
         'will-change': 'transform',
         transform: headerTransform,
