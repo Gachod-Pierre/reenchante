@@ -9,11 +9,7 @@
     <div class="px-4 md:px-8 lg:px-12 py-12 md:py-16 lg:py-20">
       <div class="max-w-6xl mx-auto">
         <!-- Logo du site -->
-        <NuxtLink
-          to="/"
-          class="fade-in-up"
-          :style="{ '--delay': '0s' }"
-        >
+        <NuxtLink to="/" class="fade-in-up" :style="{ '--delay': '0s' }">
           <NuxtImg
             src="/images/réenchanter.png"
             alt="Réenchanter"
@@ -177,24 +173,24 @@
             class="flex flex-wrap gap-4 md:gap-6 fade-in-up"
             :style="{ '--delay': '0.5s' }"
           >
-            <a
-              href="#"
+            <NuxtLink
+              to="/mentions-legales"
               class="text-gray-600 hover:underline transition-colors duration-300"
             >
               Mentions légales
-            </a>
-            <a
-              href="#"
+            </NuxtLink>
+            <NuxtLink
+              to="/politique-confidentialite"
               class="text-gray-600 hover:underline transition-colors duration-300"
             >
               Politique de confidentialité
-            </a>
-            <a
-              href="#"
+            </NuxtLink>
+            <NuxtLink
+              to="/conditions-utilisation"
               class="text-gray-600 hover:underline transition-colors duration-300"
             >
               Conditions d'utilisation
-            </a>
+            </NuxtLink>
           </div>
         </div>
       </div>
