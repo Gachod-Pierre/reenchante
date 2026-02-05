@@ -29,7 +29,9 @@ const isSuccess = ref(false);
 
 const { data: ud, error: udError } = await supabase
   .from("user_deeds")
-  .select("id, good_deed_id, status, good_deeds(points)")
+  .select(
+    "id, good_deed_id, status, good_deeds(id, title, description, points)",
+  )
   .eq("id", userDeedId)
   .single();
 
@@ -176,11 +178,30 @@ const pageStyle = {
         >
           <!-- Titre -->
           <h1
-            class="text-3xl md:text-4xl font-black mb-8"
+            class="text-3xl md:text-4xl font-black mb-6"
             :style="{ color: '#FF1493' }"
           >
             Soumettre une preuve ✨
           </h1>
+
+          <!-- Détails de l'action -->
+          <div
+            class="mb-8 p-4 md:p-6 rounded-xl border-2"
+            :style="{
+              borderColor: '#FF69B4',
+              backgroundColor: 'rgba(255, 192, 203, 0.1)',
+            }"
+          >
+            <h2
+              class="text-lg md:text-xl font-bold mb-2"
+              :style="{ color: '#FF1493' }"
+            >
+              {{ ud?.good_deeds?.title }}
+            </h2>
+            <p class="text-sm md:text-base text-gray-700 leading-relaxed">
+              {{ ud?.good_deeds?.description }}
+            </p>
+          </div>
 
           <!-- Pays -->
           <div class="mb-6">
@@ -306,7 +327,7 @@ const pageStyle = {
                 accept="image/*"
                 class="hidden"
                 @change="onFileChange"
-              />
+              >
               <label for="file-input" class="cursor-pointer">
                 <!-- Pas de fichier sélectionné -->
                 <div v-if="!filePreview" class="py-4">
@@ -321,7 +342,7 @@ const pageStyle = {
                     :src="filePreview"
                     alt="Aperçu"
                     class="max-h-64 mx-auto rounded-lg object-cover"
-                  />
+                  >
                   <p class="text-sm text-gray-600 font-semibold">
                     ✅ {{ file?.name }}
                   </p>

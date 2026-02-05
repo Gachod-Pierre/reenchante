@@ -23,7 +23,7 @@ defineEmits<{
       @input="
         $emit('update:modelValue', ($event.target as HTMLInputElement).value)
       "
-    />
+    >
     <svg
       v-if="!modelValue"
       class="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
