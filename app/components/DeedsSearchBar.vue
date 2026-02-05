@@ -10,7 +10,7 @@ defineEmits<{
 
 <template>
   <div
-    class="flex relative mb-6 w-full backdrop-blur-sm transition-all duration-300 hover:shadow-xl overflow-hidden rounded-xl"
+    class="flex relative mb-6 w-full backdrop-blur-sm transition-all duration-300 hover:shadow-xl"
   >
     <input
       :value="modelValue"
