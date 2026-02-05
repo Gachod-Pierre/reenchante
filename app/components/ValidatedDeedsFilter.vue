@@ -58,12 +58,12 @@ const toggleTag = (tag: string) => {
       <h3 class="text-lg font-bold mb-3" :style="{ color: '#FF1493' }">
         Filtrer par tags
       </h3>
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-1 sm:gap-2">
         <button
           v-for="tag in AVAILABLE_TAGS"
           :key="tag"
           :class="[
-            'px-3 py-2 rounded-full text-sm font-semibold transition-all duration-300 hover:scale-105',
+            'px-2 sm:px-3 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 hover:scale-105',
             props.selectedTags.includes(tag)
               ? 'text-white'
               : 'bg-white text-gray-700 border-2',
@@ -91,10 +91,10 @@ const toggleTag = (tag: string) => {
         <label class="text-sm font-semibold text-gray-700 block mb-2">
           Trier par
         </label>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-1 sm:gap-2">
           <button
             :class="[
-              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
               props.sortBy === 'none'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -111,7 +111,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
               props.sortBy === 'points'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -128,7 +128,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
               props.sortBy === 'date'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -145,7 +145,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
               props.sortBy === 'difficulty'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -169,10 +169,10 @@ const toggleTag = (tag: string) => {
         <label class="text-sm font-semibold text-gray-700 block mb-2">
           Ordre
         </label>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-1 sm:gap-2">
           <button
             :class="[
-              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
               props.sortOrder === 'asc'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -189,7 +189,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
               props.sortOrder === 'desc'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -212,10 +212,10 @@ const toggleTag = (tag: string) => {
         <label class="text-sm font-semibold text-gray-700 block mb-2">
           Niveau
         </label>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-1 sm:gap-2">
           <button
             :class="[
-              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
               props.difficultyLevel === 'none'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -233,7 +233,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
               props.difficultyLevel === 'facile'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -251,7 +251,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
               props.difficultyLevel === 'moyen'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -269,7 +269,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-4 py-2 rounded-lg font-semibold text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
               props.difficultyLevel === 'difficile'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
