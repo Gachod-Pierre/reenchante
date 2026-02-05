@@ -18,6 +18,8 @@ interface Props {
 
 defineProps<Props>();
 
+const showLightbox = ref(false);
+
 // Fonction pour obtenir la couleur en fonction de la difficulté
 const getDifficultyColor = (difficulty: string) => {
   switch (difficulty) {
@@ -49,11 +51,12 @@ const getDifficultyLabel = (difficulty: string) => {
 
 <template>
   <div
-    class="p-6 md:p-8 rounded-2xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:scale-105"
+    class="p-6 md:p-8 rounded-2xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer"
     :style="{
       borderColor: '#FF69B4',
       backgroundColor: 'rgba(255, 255, 255, 0.8)',
     }"
+    @click="showLightbox = true"
   >
     <!-- Titre -->
     <h3
@@ -84,7 +87,7 @@ const getDifficultyLabel = (difficulty: string) => {
       :src="deed.evidence_url"
       alt="preuve"
       class="h-64 w-auto rounded-xl mb-6 object-cover"
-    >
+    />
 
     <!-- Points et Date en évidence -->
     <div class="grid grid-cols-2 gap-3 mb-4">
@@ -146,4 +149,27 @@ const getDifficultyLabel = (difficulty: string) => {
       </div>
     </div>
   </div>
+
+  <!-- Modal Lightbox -->
+  <Teleport to="body">
+    <div
+      v-if="showLightbox"
+      class="fixed inset-0 z-[61] bg-black bg-opacity-75 flex items-center justify-center p-4"
+      @click="showLightbox = false"
+    >
+      <img
+        v-if="deed.evidence_url"
+        :src="deed.evidence_url"
+        :alt="deed.good_deeds?.title"
+        class="w-full h-auto max-h-screen object-contain rounded-lg"
+      />
+      <!-- Bouton fermer en fixed -->
+      <button
+        class="fixed top-6 right-6 z-[62] bg-black bg-opacity-50 hover:bg-opacity-75 text-white text-2xl font-bold w-12 h-12 rounded-full flex items-center justify-center transition-all leading-none"
+        @click.stop="showLightbox = false"
+      >
+        ✕
+      </button>
+    </div>
+  </Teleport>
 </template>
