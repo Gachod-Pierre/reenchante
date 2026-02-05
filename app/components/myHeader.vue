@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
+const user = useSupabaseUser();
 const scrollY = ref(0);
 const isHeaderHidden = ref(true); // Commencer caché au démarrage
 const isHovering = ref(false);
@@ -83,8 +84,7 @@ const isLinkActive = (path: string) => {
   >
     <!-- DESKTOP: Bulle ovale du header -->
     <div
-      class="
-        hidden lg:flex items-center justify-center mt-6 mr-4 px-8 py-4 ml-auto bg-[#ff69b4] rounded-full w-fit transition-transform duration-300 ease-in-out"
+      class="hidden lg:flex items-center justify-center mt-6 mr-4 px-8 py-4 ml-auto bg-[#ff69b4] rounded-full w-fit transition-transform duration-300 ease-in-out"
       :style="{
         'will-change': 'transform',
         transform: headerTransform,
@@ -123,10 +123,25 @@ const isLinkActive = (path: string) => {
         </NuxtLink>
         <NuxtLink
           to="/dashboard"
-          class="text-white font-bold hover:text-gray-300 transition"
+          class="text-white font-bold hover:text-gray-300 transition flex items-center gap-2"
           :style="isLinkActive('/dashboard') ? { color: 'rgb(194,0,97)' } : {}"
         >
-          Dashboard
+          <span v-if="user">Dashboard</span>
+          <span v-else class="flex items-center gap-2">
+            <svg
+              class="w-5 h-5"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Se connecter
+          </span>
         </NuxtLink>
       </nav>
     </div>
@@ -186,13 +201,28 @@ const isLinkActive = (path: string) => {
           </NuxtLink>
           <NuxtLink
             to="/dashboard"
-            class="hover:text-gray-300 transition text-white"
+            class="hover:text-gray-300 transition text-white flex items-center gap-2"
             :style="
               isLinkActive('/dashboard') ? { color: 'rgb(194,0,97)' } : {}
             "
             @click="isMenuOpen = false"
           >
-            Dashboard
+            <span v-if="user">Dashboard</span>
+            <span v-else class="flex items-center gap-2">
+              <svg
+                class="w-6 h-6"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Se connecter
+            </span>
           </NuxtLink>
         </nav>
       </div>
