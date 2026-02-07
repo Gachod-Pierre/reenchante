@@ -99,6 +99,7 @@ const isLinkActive = (path: string) => {
           Home
         </NuxtLink>
         <NuxtLink
+          v-if="user"
           to="/actions"
           class="text-white font-bold hover:text-gray-300 transition"
           :style="isLinkActive('/actions') ? { color: 'rgb(194,0,97)' } : {}"
@@ -106,6 +107,7 @@ const isLinkActive = (path: string) => {
           Actions
         </NuxtLink>
         <NuxtLink
+          v-if="user"
           to="/gallery"
           class="text-white font-bold hover:text-gray-300 transition"
           :style="isLinkActive('/gallery') ? { color: 'rgb(194,0,97)' } : {}"
@@ -113,6 +115,7 @@ const isLinkActive = (path: string) => {
           Galerie
         </NuxtLink>
         <NuxtLink
+          v-if="user"
           to="/leaderboard"
           class="text-white font-bold hover:text-gray-300 transition"
           :style="
@@ -174,6 +177,7 @@ const isLinkActive = (path: string) => {
             Home
           </NuxtLink>
           <NuxtLink
+            v-if="user"
             to="/actions"
             class="hover:text-gray-300 transition text-white"
             :style="isLinkActive('/actions') ? { color: 'rgb(194,0,97)' } : {}"
@@ -182,6 +186,7 @@ const isLinkActive = (path: string) => {
             Actions
           </NuxtLink>
           <NuxtLink
+            v-if="user"
             to="/gallery"
             class="hover:text-gray-300 transition text-white"
             :style="isLinkActive('/gallery') ? { color: 'rgb(194,0,97)' } : {}"
@@ -190,6 +195,7 @@ const isLinkActive = (path: string) => {
             Galerie
           </NuxtLink>
           <NuxtLink
+            v-if="user"
             to="/leaderboard"
             class="hover:text-gray-300 transition text-white"
             :style="
