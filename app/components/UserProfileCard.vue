@@ -123,7 +123,7 @@ function handleSignOut() {
   >
     <div class="flex flex-col md:flex-row md:items-center gap-6">
       <!-- Avatar -->
-      <div class="flex-shrink-0 relative">
+      <div class="flex-shrink-0 relative w-24 h-24">
         <!-- Preview après upload en édition -->
         <img
           v-if="editedAvatarUrl && isEditingProfile"
