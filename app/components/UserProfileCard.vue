@@ -26,6 +26,7 @@ const emit = defineEmits<{
   "update:editedAvatarUrl": [value: string];
   signOut: [];
   profileUpdated: [];
+  deleteAccount: [];
 }>();
 
 const props = withDefaults(defineProps<Props>(), {
@@ -33,6 +34,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const supabase = useSupabaseClient<Database>();
+const isConfirmingDelete = ref(false);
 
 // Réinitialiser les valeurs quand on rentre en édition
 function enterEditMode() {
@@ -111,6 +113,62 @@ function cancelEdit() {
 function handleSignOut() {
   emit("signOut");
 }
+
+// Afficher le modal de confirmation de suppression
+function openDeleteConfirmation() {
+  isConfirmingDelete.value = true;
+}
+
+// Annuler la suppression
+function cancelDelete() {
+  isConfirmingDelete.value = false;
+}
+
+// Confirmer et supprimer le compte
+async function confirmDelete() {
+  try {
+    // Supprimer tous les user_deeds de l'utilisateur
+    const { error: deedsError } = await supabase
+      .from("user_deeds")
+      .delete()
+      .eq("user_id", props.userId);
+
+    if (deedsError) throw deedsError;
+
+    // Supprimer le profil utilisateur
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .delete()
+      .eq("id", props.userId);
+
+    if (profileError) throw profileError;
+
+    // Appeler la route serveur pour supprimer l'utilisateur auth
+    const response = await $fetch("/api/auth/delete-account", {
+      method: "POST",
+      body: { userId: props.userId },
+    });
+
+    if (!response.success) {
+      throw new Error(response.message || "Erreur lors de la suppression du compte");
+    }
+
+    // Déconnecter l'utilisateur
+    await supabase.auth.signOut();
+
+    // Émettre l'événement et afficher le message
+    isConfirmingDelete.value = false;
+    emit("deleteAccount");
+    alert("Compte supprimé ✅");
+
+    // Rediriger vers la page d'accueil
+    navigateTo("/");
+  } catch (error) {
+    isConfirmingDelete.value = false;
+    console.error("Erreur lors de la suppression du compte:", error);
+    alert("Erreur lors de la suppression : " + (error as Error).message);
+  }
+}
 </script>
 
 <template>
@@ -131,7 +189,7 @@ function handleSignOut() {
           :alt="editedUsername || 'Avatar'"
           class="w-24 h-24 rounded-full object-cover border-2"
           :style="{ borderColor: '#FF69B4' }"
-        >
+        />
         <!-- Avatar existant en mode lecture -->
         <img
           v-else-if="userProfile?.avatar_url && !isEditingProfile"
@@ -139,7 +197,7 @@ function handleSignOut() {
           :alt="userProfile.username || 'Avatar'"
           class="w-24 h-24 rounded-full object-cover border-2"
           :style="{ borderColor: '#FF69B4' }"
-        >
+        />
         <!-- Placeholder -->
         <div
           v-else
@@ -164,7 +222,7 @@ function handleSignOut() {
             class="hidden"
             :disabled="isUploadingAvatar"
             @change="handleAvatarUpload"
-          >
+          />
         </label>
       </div>
 
@@ -204,7 +262,7 @@ function handleSignOut() {
                   ($event.target as HTMLInputElement).value,
                 )
               "
-            >
+            />
           </div>
 
           <!-- Boutons d'action (Modifier/Enregistrer/Annuler) - seulement si isOwner -->
@@ -229,6 +287,15 @@ function handleSignOut() {
               >
                 ✕ Annuler
               </button>
+              <button
+                class="px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold text-sm md:text-base flex items-center gap-2 text-white bg-red-500 hover:bg-red-600 transition-all duration-300 hover:scale-105"
+                @click="openDeleteConfirmation"
+                title="Supprimer le compte"
+              >
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+              </button>
             </template>
           </div>
         </div>
@@ -244,4 +311,59 @@ function handleSignOut() {
       </div>
     </div>
   </div>
+
+  <!-- Modal de confirmation de suppression - Teleport -->
+  <Teleport to="body">
+    <div
+      v-if="isConfirmingDelete"
+      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      @click.self="cancelDelete"
+    >
+      <div
+        class="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full animate-scaleIn"
+      >
+        <h3 class="text-2xl font-black mb-2" :style="{ color: '#FF1493' }">
+          Supprimer le compte ?
+        </h3>
+        <p class="text-gray-700 text-base mb-6">
+          Cette action est irréversible. Toutes vos données seront supprimées
+          définitivement.
+        </p>
+        <div class="flex gap-3 justify-end">
+          <button
+            class="px-4 py-2 rounded-lg font-semibold text-white bg-gray-500 hover:bg-gray-600 transition-all duration-300"
+            @click="cancelDelete"
+          >
+            ✕ Annuler
+          </button>
+          <button
+            class="px-4 py-2 rounded-lg font-semibold text-white bg-red-500 hover:bg-red-600 transition-all duration-300 flex items-center gap-2"
+            @click="confirmDelete"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
+
+<style scoped>
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s ease-out;
+}
+</style>
