@@ -167,7 +167,7 @@
           class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs md:text-sm text-gray-600"
         >
           <p class="fade-in-up" :style="{ '--delay': '0.4s' }">
-            © 2026 Réenchanter. Tous droits réservés. 🌟
+            © 2026 Réenchante. Tous droits réservés. 🌟
           </p>
           <div
             class="flex flex-wrap gap-4 md:gap-6 fade-in-up"

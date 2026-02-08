@@ -38,7 +38,7 @@
             Éditeur du site
           </h2>
           <div class="space-y-2 text-gray-700">
-            <p><strong>Nom :</strong> Réenchanter</p>
+            <p><strong>Nom :</strong> Réenchante</p>
             <p><strong>Nature :</strong> Plateforme communautaire web</p>
             <p><strong>Adresse :</strong> 4 pl Lucien Tharradin, 25200 Montbéliard</p>
             <p>
@@ -157,8 +157,8 @@
           </h2>
           <div class="space-y-3 text-gray-700">
             <p>
-              Tous les éléments du site Réenchanter (textes, images, logos,
-              design) sont la propriété exclusive de Réenchanter ou de ses
+              Tous les éléments du site Réenchante (textes, images, logos,
+              design) sont la propriété exclusive de Réenchante ou de ses
               partenaires, et sont protégés par les lois sur la propriété
               intellectuelle.
             </p>
@@ -183,7 +183,7 @@
           </h2>
           <div class="space-y-3 text-gray-700">
             <p>
-              Réenchanter s'efforce de maintenir ce site dans les meilleures
+              Réenchante s'efforce de maintenir ce site dans les meilleures
               conditions possible. Cependant, nous déclinons toute
               responsabilité concernant :
             </p>
@@ -211,7 +211,7 @@
             Modifications
           </h2>
           <p class="text-gray-700">
-            Réenchanter se réserve le droit de modifier ces mentions légales à
+            Réenchante se réserve le droit de modifier ces mentions légales à
             tout moment sans préavis. Les modifications entrent en vigueur dès
             leur publication sur le site.
           </p>

@@ -115,10 +115,10 @@ const pageStyle = {
             class="text-5xl md:text-6xl font-black mb-2"
             :style="{ color: '#FF1493' }"
           >
-            Réenchanter
+            Réenchante
           </h1>
           <p class="text-gray-600 text-base md:text-lg">
-            le monde, ensemble 🌍✨
+            le monde 🌍✨
           </p>
         </div>
 
@@ -131,8 +131,8 @@ const pageStyle = {
           }"
         >
           <p class="text-gray-700 text-sm md:text-base leading-relaxed">
-            Réenchanter est une plateforme communautaire où chacun peut réaliser
-            ses bonnes actions et contribuer à rendre le monde un peu plus beau.
+            Réenchante est une plateforme communautaire où chacun peut réaliser
+            des bonnes actions et contribuer à rendre le monde un peu plus beau.
             <br >
             <br >
             Soumets tes preuves de bienveillance, accumule des points et grimpe

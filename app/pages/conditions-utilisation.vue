@@ -33,7 +33,7 @@
         }"
       >
         <p class="text-gray-700">
-          Bienvenue sur Réenchanter ! En accédant et en utilisant ce site, vous
+          Bienvenue sur Réenchante ! En accédant et en utilisant ce site, vous
           acceptez de vous conformer à ces conditions d'utilisation. Si vous
           n'acceptez pas ces conditions, veuillez ne pas utiliser le site.
         </p>
@@ -55,7 +55,7 @@
           </h2>
           <div class="space-y-3 text-gray-700">
             <p>
-              <strong>Utilisation gratuite :</strong> Réenchanter est gratuit et
+              <strong>Utilisation gratuite :</strong> Réenchante est gratuit et
               accessible à tous les utilisateurs de 13 ans ou plus.
             </p>
             <p>
@@ -183,7 +183,7 @@
           </h2>
           <div class="space-y-3 text-gray-700">
             <p>
-              Réenchanter fournit le service "en l'état". Nous déclinons toute
+              Réenchante fournit le service "en l'état". Nous déclinons toute
               responsabilité pour :
             </p>
             <ul class="list-disc list-inside space-y-1">
@@ -241,7 +241,7 @@
           </h2>
           <div class="space-y-3 text-gray-700">
             <p>
-              Réenchanter utilise des services tiers pour fonctionner. Nous ne
+              Réenchante utilise des services tiers pour fonctionner. Nous ne
               sommes pas responsables de :
             </p>
             <ul class="list-disc list-inside space-y-1 mb-3">
@@ -270,7 +270,7 @@
           </h2>
           <div class="space-y-3 text-gray-700">
             <p>
-              Tous les éléments du site Réenchanter (design, code, logos,
+              Tous les éléments du site Réenchante (design, code, logos,
               textes) sont protégés par les lois sur la propriété
               intellectuelle.
             </p>
@@ -299,7 +299,7 @@
           </h2>
           <div class="space-y-3 text-gray-700">
             <p>
-              Réenchanter se réserve le droit de modifier ces conditions à tout
+              Réenchante se réserve le droit de modifier ces conditions à tout
               moment. Les modifications entrent en vigueur dès leur publication.
             </p>
             <p>

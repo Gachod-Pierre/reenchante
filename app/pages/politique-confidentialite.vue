@@ -33,7 +33,7 @@
         }"
       >
         <p class="text-gray-700">
-          Chez Réenchanter, nous accordons une grande importance à la protection
+          Chez Réenchante, nous accordons une grande importance à la protection
           de votre vie privée. Cette politique de confidentialité explique
           comment nous collectons, utilisons et protégeons vos données
           personnelles.
