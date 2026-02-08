@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from "vue";
+import {
+  ref,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+  nextTick,
+} from "vue";
 
 interface Step {
   title: string;
   description: string;
-  refName: string;
+  refName: string; // Référence à l'élément à spotlight
   buttonLabel: string;
   buttonAction?: () => void;
 }
@@ -13,9 +20,12 @@ interface Props {
   isOpen: boolean;
   steps: Step[];
   elementRefs: Record<string, HTMLElement | null>;
+  storageKey?: string; // Clé localStorage pour persister la completion
 }
 
-const props = withDefaults(defineProps<Props>(), {});
+const props = withDefaults(defineProps<Props>(), {
+  storageKey: "dashboard_tutorial_completed",
+});
 
 const emit = defineEmits<{
   "update:isOpen": [value: boolean];
@@ -111,6 +121,11 @@ const modalPosition = computed<any>(() => {
 
 // Récupérer la position et appliquer le spotlight
 function updateHighlightedElement() {
+  // Ne rien faire si le tutoriel n'est pas ouvert
+  if (!props.isOpen) {
+    return;
+  }
+
   // Nettoyer TOUS les éléments qui pourraient avoir un spotlight
   Object.values(props.elementRefs).forEach((element) => {
     if (element) {
@@ -124,28 +139,26 @@ function updateHighlightedElement() {
 
   if (currentStep.value < props.steps.length) {
     const step = props.steps[currentStep.value];
-    if (step) {
-      const element = props.elementRefs[step.refName];
-      if (element) {
-        highlightedElement.value = element;
+    const element = props.elementRefs[step.refName];
+    if (element) {
+      highlightedElement.value = element;
+      highlightedElementRect.value = element.getBoundingClientRect();
+
+      // Appliquer un box-shadow qui couvre tout l'écran
+      element.style.boxShadow = "0 0 0 9999px rgba(0, 0, 0, 0.7)";
+      element.style.transition = "box-shadow 0.3s ease";
+      element.style.position = "relative";
+      element.style.zIndex = "58";
+      element.style.pointerEvents = "none";
+
+      previousElement.value = element;
+
+      // Attendre que le DOM soit mis à jour, puis mettre à jour la rect du modal
+      nextTick(() => {
         highlightedElementRect.value = element.getBoundingClientRect();
-
-        // Appliquer un box-shadow qui couvre tout l'écran
-        element.style.boxShadow = "0 0 0 9999px rgba(0, 0, 0, 0.7)";
-        element.style.transition = "box-shadow 0.3s ease";
-        element.style.position = "relative";
-        element.style.zIndex = "58";
-        element.style.pointerEvents = "none";
-
-        previousElement.value = element;
-
-        // Attendre que le DOM soit mis à jour, puis mettre à jour la rect du modal
-        nextTick(() => {
-          highlightedElementRect.value = element.getBoundingClientRect();
-          // Scroller l'élément au centre de l'écran
-          element.scrollIntoView({ behavior: "smooth", block: "center" });
-        });
-      }
+        // Scroller l'élément au centre de l'écran
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
     }
   }
 }
@@ -170,7 +183,17 @@ function prevStep() {
 }
 
 function completeTutorial() {
-  // Nettoyer TOUS les éléments
+  // Nettoyer l'élément actuellement en spotlight
+  if (highlightedElement.value) {
+    highlightedElement.value.style.boxShadow = "";
+    highlightedElement.value.style.transition = "";
+    highlightedElement.value.style.position = "";
+    highlightedElement.value.style.pointerEvents = "";
+    highlightedElement.value.style.zIndex = "";
+    highlightedElement.value = null;
+  }
+
+  // Nettoyer TOUS les éléments (au cas où)
   Object.values(props.elementRefs).forEach((element) => {
     if (element) {
       element.style.boxShadow = "";
@@ -182,7 +205,7 @@ function completeTutorial() {
   });
 
   if (import.meta.client) {
-    localStorage.setItem("dashboard_tutorial_completed", "true");
+    localStorage.setItem(props.storageKey, "true");
   }
   emit("update:isOpen", false);
 }
@@ -211,6 +234,38 @@ watch(
   { deep: true },
 );
 
+// Nettoyer complètement quand le modal se ferme
+watch(
+  () => props.isOpen,
+  (newVal) => {
+    if (!newVal) {
+      // Nettoyer l'élément actuellement en spotlight
+      if (highlightedElement.value) {
+        highlightedElement.value.style.boxShadow = "";
+        highlightedElement.value.style.transition = "";
+        highlightedElement.value.style.position = "";
+        highlightedElement.value.style.pointerEvents = "";
+        highlightedElement.value.style.zIndex = "";
+        highlightedElement.value = null;
+      }
+
+      // Nettoyer TOUS les éléments
+      Object.values(props.elementRefs).forEach((element) => {
+        if (element) {
+          element.style.boxShadow = "";
+          element.style.transition = "";
+          element.style.position = "";
+          element.style.pointerEvents = "";
+          element.style.zIndex = "";
+        }
+      });
+
+      // Réinitialiser l'étape courante à 0 pour la prochaine visite
+      currentStep.value = 0;
+    }
+  },
+);
+
 onMounted(() => {
   window.addEventListener("resize", updateHighlightedElement);
   nextTick(() => updateHighlightedElement());
@@ -218,6 +273,33 @@ onMounted(() => {
   return () => {
     window.removeEventListener("resize", updateHighlightedElement);
   };
+});
+
+// Nettoyer complètement quand le composant est démonté
+onBeforeUnmount(() => {
+  // Nettoyer l'élément actuellement en spotlight
+  if (highlightedElement.value) {
+    highlightedElement.value.style.boxShadow = "";
+    highlightedElement.value.style.transition = "";
+    highlightedElement.value.style.position = "";
+    highlightedElement.value.style.pointerEvents = "";
+    highlightedElement.value.style.zIndex = "";
+    highlightedElement.value = null;
+  }
+
+  // Nettoyer TOUS les éléments
+  Object.values(props.elementRefs).forEach((element) => {
+    if (element) {
+      element.style.boxShadow = "";
+      element.style.transition = "";
+      element.style.position = "";
+      element.style.pointerEvents = "";
+      element.style.zIndex = "";
+    }
+  });
+
+  // Retirer l'event listener du resize
+  window.removeEventListener("resize", updateHighlightedElement);
 });
 </script>
 

@@ -14,6 +14,9 @@ const modalType = ref<"limit-in-progress" | "limit-daily-5" | "success">(
   "success",
 );
 
+// État du modal de bienvenue des actions
+const isActionsWelcomeModalOpen = ref(false);
+
 // Récupérer les IDs des actions déjà prises par l'user
 const { data: userDeedIds } = await useAsyncData("userDeedIds", async () => {
   if (!user.value) return [];
@@ -127,8 +130,9 @@ const filteredAndSortedDeeds = computed(() => {
   return sorted;
 });
 
-// Vérifier la limite quotidienne au montage
+// Vérifier la limite quotidienne au montage et lancer le tutoriel
 onMounted(async () => {
+  // Vérifier la limite quotidienne
   if (user.value) {
     const {
       data: { user: sessionUser },
@@ -151,6 +155,16 @@ onMounted(async () => {
         showDailyLimitModal.value = true;
         modalType.value = "limit-daily-5";
       }
+    }
+  }
+
+  // Afficher le modal de bienvenue si c'est la première visite
+  if (import.meta.client) {
+    const hasWelcomeModalSeen = localStorage.getItem(
+      "actions_welcome_modal_completed",
+    );
+    if (!hasWelcomeModalSeen) {
+      isActionsWelcomeModalOpen.value = true;
     }
   }
 });
@@ -230,7 +244,19 @@ const pageStyle = {
 
 <template>
   <div :style="pageStyle" class="relative">
-    <!-- Contenu principal avec padding pour le header -->
+    <!-- Modal limite quotidienne -->
+    <DailyLimitModal
+      :is-visible="showDailyLimitModal"
+      :type="modalType"
+      @close="showDailyLimitModal = false"
+    />
+
+    <!-- Modal de bienvenue des actions -->
+    <ActionsWelcomeModal
+      :is-open="isActionsWelcomeModalOpen"
+      @update:is-open="isActionsWelcomeModalOpen = $event"
+      @navigate="(path) => navigateTo(path)"
+    />
     <div class="pt-16 px-4 md:px-8 lg:px-12 pb-12">
       <div class="max-w-6xl mx-auto">
         <!-- Titre principal -->
