@@ -139,26 +139,28 @@ function updateHighlightedElement() {
 
   if (currentStep.value < props.steps.length) {
     const step = props.steps[currentStep.value];
-    const element = props.elementRefs[step.refName];
-    if (element) {
-      highlightedElement.value = element;
-      highlightedElementRect.value = element.getBoundingClientRect();
-
-      // Appliquer un box-shadow qui couvre tout l'écran
-      element.style.boxShadow = "0 0 0 9999px rgba(0, 0, 0, 0.7)";
-      element.style.transition = "box-shadow 0.3s ease";
-      element.style.position = "relative";
-      element.style.zIndex = "58";
-      element.style.pointerEvents = "none";
-
-      previousElement.value = element;
-
-      // Attendre que le DOM soit mis à jour, puis mettre à jour la rect du modal
-      nextTick(() => {
+    if (step) {
+      const element = props.elementRefs[step.refName];
+      if (element) {
+        highlightedElement.value = element;
         highlightedElementRect.value = element.getBoundingClientRect();
-        // Scroller l'élément au centre de l'écran
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
-      });
+
+        // Appliquer un box-shadow qui couvre tout l'écran
+        element.style.boxShadow = "0 0 0 9999px rgba(0, 0, 0, 0.7)";
+        element.style.transition = "box-shadow 0.3s ease";
+        element.style.position = "relative";
+        element.style.zIndex = "58";
+        element.style.pointerEvents = "none";
+
+        previousElement.value = element;
+
+        // Attendre que le DOM soit mis à jour, puis mettre à jour la rect du modal
+        nextTick(() => {
+          highlightedElementRect.value = element.getBoundingClientRect();
+          // Scroller l'élément au centre de l'écran
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      }
     }
   }
 }

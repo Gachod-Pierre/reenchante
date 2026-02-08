@@ -255,7 +255,6 @@ const pageStyle = {
     <ActionsWelcomeModal
       :is-open="isActionsWelcomeModalOpen"
       @update:is-open="isActionsWelcomeModalOpen = $event"
-      @navigate="(path) => navigateTo(path)"
     />
     <div class="pt-16 px-4 md:px-8 lg:px-12 pb-12">
       <div class="max-w-6xl mx-auto">

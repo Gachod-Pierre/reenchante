@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, onMounted } from "vue";
 import type { Database } from "../types/database.types";
 
 definePageMeta({ middleware: ["auth"] });
@@ -42,10 +43,31 @@ const pageStyle = {
     "linear-gradient(rgba(180, 180, 180, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(180, 180, 180, 0.2) 1px, transparent 1px)",
   backgroundSize: "60px 60px",
 };
+
+// État du modal de bienvenue de la galerie
+const isGalleryWelcomeModalOpen = ref(false);
+
+// Afficher le modal de bienvenue si c'est la première visite
+onMounted(() => {
+  if (import.meta.client) {
+    const hasWelcomeModalSeen = localStorage.getItem(
+      "gallery_welcome_modal_completed",
+    );
+    if (!hasWelcomeModalSeen) {
+      isGalleryWelcomeModalOpen.value = true;
+    }
+  }
+});
 </script>
 
 <template>
   <div :style="pageStyle" class="relative">
+    <!-- Modal de bienvenue de la galerie -->
+    <GalleryWelcomeModal
+      :is-open="isGalleryWelcomeModalOpen"
+      @update:is-open="isGalleryWelcomeModalOpen = $event"
+    />
+
     <!-- Contenu principal -->
     <div class="pt-16 px-4 md:px-8 lg:px-12 pb-12">
       <div class="max-w-6xl mx-auto">

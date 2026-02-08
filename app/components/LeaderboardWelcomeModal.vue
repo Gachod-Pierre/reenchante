@@ -8,7 +8,7 @@ const emit = defineEmits<{
 }>();
 
 function handleClose() {
-  localStorage.setItem("actions_welcome_modal_completed", "true");
+  localStorage.setItem("leaderboard_welcome_modal_completed", "true");
   emit("update:isOpen", false);
 }
 </script>
@@ -26,7 +26,7 @@ function handleClose() {
     <!-- Modal centré -->
     <div
       class="fixed inset-0 z-50 flex items-center justify-center px-4"
-      @click="emit('update:isOpen', false)"
+      @click="handleClose"
     >
       <div
         class="bg-white rounded-3xl p-8 md:p-12 max-w-md shadow-2xl relative"
@@ -40,13 +40,13 @@ function handleClose() {
           class="text-2xl md:text-3xl font-bold mb-4"
           :style="{ color: '#FF1493' }"
         >
-          Découvrez les Bonnes Actions
+          Classement des Réenchanteurs
         </h2>
 
         <p class="text-gray-700 text-base leading-relaxed mb-8">
-          Bienvenue sur la page des bonnes actions ! Explorez une multitude
-          d'actions positives à accomplir, soumettez des preuves en photo pour
-          les faire valider, et gagnez des points de réenchantement !
+          Bienvenue dans la page de classement ! Découvrez les top Réenchanteurs de la
+          communauté. Compétitionnez amicalement, augmenez le score global pour atteindre des paliers et inspirez-vous des
+          accomplissements des autres pour illuminer le monde ensemble.
         </p>
 
         <!-- Bouton principal -->
@@ -57,13 +57,13 @@ function handleClose() {
           }"
           @click="handleClose"
         >
-          Découvrir les bonnes actions →
+          Découvrir le classement →
         </button>
 
         <!-- Bouton fermer (petit x) -->
         <button
           class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-          @click="emit('update:isOpen', false)"
+          @click="handleClose"
         >
           <svg
             class="w-6 h-6"

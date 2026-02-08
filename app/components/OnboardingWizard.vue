@@ -13,7 +13,7 @@ const currentStep = ref(0);
 
 const steps = [
   {
-    title: "Bienvenue sur Enchante",
+    title: "Bienvenue sur Reenchante !",
     description:
       "Une plateforme collaborative où les bonnes actions réenchantent le monde !",
     icon: "🌍",

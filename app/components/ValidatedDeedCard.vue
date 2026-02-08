@@ -87,7 +87,7 @@ const getDifficultyLabel = (difficulty: string) => {
       :src="deed.evidence_url"
       alt="preuve"
       class="h-64 w-auto rounded-xl mb-6 object-cover"
-    />
+    >
 
     <!-- Points et Date en évidence -->
     <div class="grid grid-cols-2 gap-3 mb-4">
@@ -162,7 +162,7 @@ const getDifficultyLabel = (difficulty: string) => {
         :src="deed.evidence_url"
         :alt="deed.good_deeds?.title"
         class="w-full h-auto max-h-screen object-contain rounded-lg"
-      />
+      >
       <!-- Bouton fermer en fixed -->
       <button
         class="fixed top-6 right-6 z-[62] bg-black bg-opacity-50 hover:bg-opacity-75 text-white text-2xl font-bold w-12 h-12 rounded-full flex items-center justify-center transition-all leading-none"

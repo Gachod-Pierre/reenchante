@@ -191,7 +191,7 @@ async function confirmDelete() {
           :alt="editedUsername || 'Avatar'"
           class="w-24 h-24 rounded-full object-cover border-2"
           :style="{ borderColor: '#FF69B4' }"
-        />
+        >
         <!-- Avatar existant en mode lecture -->
         <img
           v-else-if="userProfile?.avatar_url && !isEditingProfile"
@@ -199,7 +199,7 @@ async function confirmDelete() {
           :alt="userProfile.username || 'Avatar'"
           class="w-24 h-24 rounded-full object-cover border-2"
           :style="{ borderColor: '#FF69B4' }"
-        />
+        >
         <!-- Placeholder -->
         <div
           v-else
@@ -224,7 +224,7 @@ async function confirmDelete() {
             class="hidden"
             :disabled="isUploadingAvatar"
             @change="handleAvatarUpload"
-          />
+          >
         </label>
       </div>
 
@@ -264,7 +264,7 @@ async function confirmDelete() {
                   ($event.target as HTMLInputElement).value,
                 )
               "
-            />
+            >
           </div>
 
           <!-- Boutons d'action (Modifier/Enregistrer/Annuler) - seulement si isOwner -->
