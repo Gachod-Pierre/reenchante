@@ -177,7 +177,7 @@ onMounted(async () => {
     container.addEventListener("mouseup", handleMouseUp, { passive: true });
     container.addEventListener("mouseleave", handleMouseUp, { passive: true });
 
-    // Support tactile pour mobile
+    // Support tactile pour mobile - rotation de la planète
     container.addEventListener(
       "touchstart",
       (e: TouchEvent) => {
@@ -503,7 +503,7 @@ onUnmounted(() => {
             :scale="[ping.scale, ping.scale, ping.scale]"
             @pointerenter="handlePingHover(ping.id, true)"
             @pointerleave="handlePingHover(ping.id, false)"
-            @click="handlePingClick(ping.id)"
+            @pointerdown="handlePingClick(ping.id)"
           >
             <TresSphereGeometry :args="[1, 16, 16]" />
             <TresMeshStandardMaterial

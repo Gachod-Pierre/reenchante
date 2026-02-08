@@ -27,7 +27,7 @@ const steps = [
   {
     title: "Explorez la planète",
     description:
-      "Attrapez avec la souris ou votre doigt et faites tourner la planète ! Cliquez ou appuyez sur la pastille rose d'un continent pour découvrir les bonnes actions réalisées par d'autres utilisateurs dans le monde.",
+      "Avec la souris ou votre doigt, attrapez la planète et faites-la tourner ! Cliquez sur une pastille rose (sur ordinateur) ou appuyez dessus de façon prolongée (sur mobile) pour découvrir les bonnes actions réalisées par d'autres utilisateurs dans le monde !",
     icon: "🌐",
   },
   {
