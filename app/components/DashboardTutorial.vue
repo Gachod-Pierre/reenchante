@@ -49,66 +49,34 @@ const modalPosition = computed<any>(() => {
   }
 
   const element = highlightedElementRect.value;
-  const viewportHeight = window.innerHeight;
   const viewportWidth = window.innerWidth;
-  const modalWidth = 420;
-  const modalHeight = 320;
+  // Dimensions responsive du modal
+  const isMobile = viewportWidth < 640;
+  const modalWidth = isMobile ? Math.min(280, viewportWidth - 32) : 420;
+  const modalHeight = isMobile ? 280 : 320;
   const gap = 20;
-  const minMargin = 16; // Marge minimale pour éviter d'être coupé
+  const minMargin = 16;
 
-  let top = element.bottom + gap;
+  // Centrer horizontalement par rapport à l'élément
   let left = element.left + element.width / 2;
-  let transform = "translateX(-50%)";
+  const transform = "translateX(-50%)";
 
-  // Si pas assez de place en bas
-  if (top + modalHeight > viewportHeight - minMargin) {
-    top = element.top - gap - modalHeight;
-
-    // Si pas assez non plus en haut, placer à côté
-    if (top < minMargin) {
-      top = Math.max(minMargin, element.top + element.height / 2);
-      transform = "translateY(-50%)";
-
-      // Si l'élément est à droite, placer le modal à gauche
-      if (element.left > viewportWidth / 2) {
-        left = element.left - gap - modalWidth;
-        // Si le modal ne rentre pas à gauche, le placer à droite avec moins de gap
-        if (left < minMargin) {
-          left = element.right + gap;
-          // Si toujours pas de place, centrer horizontalement et accepter le chevauchement
-          if (left + modalWidth > viewportWidth - minMargin) {
-            left = viewportWidth / 2;
-            transform = "translate(-50%, -50%)";
-          }
-        }
-      } else {
-        // L'élément est à gauche, placer le modal à droite
-        left = element.right + gap;
-        // Si le modal sort à droite, le ramener
-        if (left + modalWidth > viewportWidth - minMargin) {
-          left = Math.max(minMargin, element.left - gap - modalWidth);
-          // Si toujours pas de place, centrer
-          if (left < minMargin) {
-            left = viewportWidth / 2;
-            transform = "translate(-50%, -50%)";
-          }
-        }
-      }
-    }
-  }
-
-  // Sécurité verticale finale
-  top = Math.max(
-    minMargin,
-    Math.min(top, viewportHeight - modalHeight - minMargin),
-  );
-
-  // Sécurité horizontale finale - repositionner si le modal sort à droite
-  if (left + modalWidth / 2 > viewportWidth - minMargin) {
+  // S'assurer que le modal ne sort pas du viewport horizontalement
+  const leftWithoutTransform = left - modalWidth / 2;
+  if (leftWithoutTransform < minMargin) {
+    left = minMargin + modalWidth / 2;
+  } else if (leftWithoutTransform + modalWidth > viewportWidth - minMargin) {
     left = viewportWidth - minMargin - modalWidth / 2;
   }
-  if (left - modalWidth / 2 < minMargin) {
-    left = minMargin + modalWidth / 2;
+
+  // Essayer au-dessus d'abord
+  let top = element.top - gap - modalHeight;
+  let isAbove = true;
+
+  // Si pas assez de place en haut, placer en dessous
+  if (top < minMargin) {
+    top = element.bottom + gap;
+    isAbove = false;
   }
 
   return {
@@ -116,6 +84,7 @@ const modalPosition = computed<any>(() => {
     top: `${top}px`,
     left: `${left}px`,
     transform,
+    isAbove, // Stocker cette info pour le scroll
   };
 });
 
@@ -145,7 +114,7 @@ function updateHighlightedElement() {
         highlightedElement.value = element;
         highlightedElementRect.value = element.getBoundingClientRect();
 
-        // Appliquer un box-shadow qui couvre tout l'écran
+        // Appliquer le spotlight
         element.style.boxShadow = "0 0 0 9999px rgba(0, 0, 0, 0.7)";
         element.style.transition = "box-shadow 0.3s ease";
         element.style.position = "relative";
@@ -154,14 +123,58 @@ function updateHighlightedElement() {
 
         previousElement.value = element;
 
-        // Attendre que le DOM soit mis à jour, puis mettre à jour la rect du modal
+        // Scroller pour montrer l'élément
         nextTick(() => {
-          highlightedElementRect.value = element.getBoundingClientRect();
-          // Scroller l'élément au centre de l'écran
-          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          scrollModalIntoView();
         });
       }
     }
+  }
+}
+
+// Scroller pour montrer l'élément et le modal
+function scrollModalIntoView() {
+  if (!highlightedElement.value) return;
+
+  const element = highlightedElement.value;
+  const rect = element.getBoundingClientRect();
+  const minMargin = 16;
+
+  // Vérifier si l'élément est visible
+  const isVisible =
+    rect.top >= minMargin && rect.bottom <= window.innerHeight - minMargin;
+
+  if (!isVisible) {
+    // Scroller juste assez pour rendre l'élément visible (ne pas le mettre en haut)
+    let targetScroll = window.scrollY;
+
+    if (rect.top < minMargin) {
+      // L'élément est au-dessus, scroller vers le haut juste assez
+      targetScroll = Math.max(0, rect.top + window.scrollY - minMargin);
+    } else if (rect.bottom > window.innerHeight - minMargin) {
+      // L'élément est au-dessous, scroller vers le bas juste assez
+      targetScroll =
+        rect.bottom + window.scrollY - window.innerHeight + minMargin;
+    }
+
+    window.scrollTo({
+      top: targetScroll,
+      behavior: "smooth",
+    });
+
+    // Pendant le scroll, mettre à jour la rect en continu pour que le modal suive fluidement
+    const handleScroll = () => {
+      highlightedElementRect.value = element.getBoundingClientRect();
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    // Arrêter de suivre après 600ms (fin du scroll smooth)
+    setTimeout(() => {
+      window.removeEventListener("scroll", handleScroll);
+      // Dernière mise à jour pour s'assurer qu'on est bien aligné
+      highlightedElementRect.value = element.getBoundingClientRect();
+    }, 600);
   }
 }
 
@@ -311,7 +324,12 @@ onBeforeUnmount(() => {
       <!-- Modal d'explication -->
       <div
         class="bg-white rounded-2xl p-6 shadow-2xl animate-scaleIn"
-        :style="{ ...modalPosition, maxWidth: '450px', zIndex: 59 }"
+        :style="{
+          ...modalPosition,
+          width: '90%',
+          maxWidth: '450px',
+          zIndex: 59,
+        }"
       >
         <!-- Numéro de l'étape -->
         <div class="mb-3">
@@ -382,5 +400,28 @@ onBeforeUnmount(() => {
 
 .animate-scaleIn {
   animation: scaleIn 0.3s ease-out;
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  :deep(.bg-white) {
+    padding: 1rem;
+  }
+
+  :deep(h3) {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  :deep(p) {
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+  }
+
+  :deep(button) {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
 }
 </style>
