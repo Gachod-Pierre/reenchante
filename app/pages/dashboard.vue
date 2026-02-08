@@ -123,8 +123,6 @@ const hasReachedDailyLimit = computed(
 
 // État du tutoriel dashboard
 const isDashboardTutorialOpen = ref(false);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const dashboardTutorialRef = ref<any>(null);
 
 // Refs pour les sections du tutoriel
 const userProfileCardRef = ref<HTMLElement | null>(null);
@@ -164,6 +162,14 @@ const dashboardTutorialSteps = [
     buttonAction: () => navigateTo("/actions"),
   },
 ];
+
+// Map des éléments à spotlight
+const dashboardElementRefs = computed(() => ({
+  userProfileCard: userProfileCardRef.value,
+  pointsCard: pointsCardRef.value,
+  dedesInProgressSection: dedesInProgressSectionRef.value,
+  dedesValidatedSection: dedesValidatedSectionRef.value,
+}));
 
 // Afficher le modal quand la limite est atteinte
 watch(
@@ -286,56 +292,10 @@ onMounted(() => {
       "dashboard_tutorial_completed",
     );
     if (!hasDashboardTutorialCompleted) {
-      // Attendre que le DOM soit rendu
-      nextTick(() => {
-        // Enregistrer les refs auprès du composant tutoriel
-        const tutorial = dashboardTutorialRef.value;
-        tutorial?.setElementRef("userProfileCard", userProfileCardRef.value);
-        tutorial?.setElementRef("pointsCard", pointsCardRef.value);
-        tutorial?.setElementRef(
-          "dedesInProgressSection",
-          dedesInProgressSectionRef.value,
-        );
-        tutorial?.setElementRef(
-          "dedesValidatedSection",
-          dedesValidatedSectionRef.value,
-        );
-        isDashboardTutorialOpen.value = true;
-      });
+      isDashboardTutorialOpen.value = true;
     }
   }
 });
-
-// Watcher pour enregistrer les refs quand elles changent
-watch(
-  [
-    userProfileCardRef,
-    pointsCardRef,
-    dedesInProgressSectionRef,
-    dedesValidatedSectionRef,
-  ],
-  () => {
-    if (dashboardTutorialRef.value && isDashboardTutorialOpen.value) {
-      const tutorial = dashboardTutorialRef.value;
-      tutorial?.setElementRef("userProfileCard", userProfileCardRef.value);
-      tutorial?.setElementRef("pointsCard", pointsCardRef.value);
-      tutorial?.setElementRef(
-        "dedesInProgressSection",
-        dedesInProgressSectionRef.value,
-      );
-      tutorial?.setElementRef(
-        "dedesValidatedSection",
-        dedesValidatedSectionRef.value,
-      );
-    }
-  },
-  { flush: "post" },
-);
-
-// Fonction pour réouvrir le tutoriel (optionnel - pour usage futur)
-function _restartDashboardTutorial() {
-  isDashboardTutorialOpen.value = true;
-}
 </script>
 
 <template>
@@ -360,9 +320,9 @@ function _restartDashboardTutorial() {
 
     <!-- Tutoriel du Dashboard -->
     <DashboardTutorial
-      ref="dashboardTutorialRef"
       :is-open="isDashboardTutorialOpen"
       :steps="dashboardTutorialSteps"
+      :element-refs="dashboardElementRefs"
       @update:is-open="isDashboardTutorialOpen = $event"
     />
 

@@ -12,6 +12,7 @@ interface Step {
 interface Props {
   isOpen: boolean;
   steps: Step[];
+  elementRefs: Record<string, HTMLElement | null>;
 }
 
 const props = withDefaults(defineProps<Props>(), {});
@@ -23,7 +24,6 @@ const emit = defineEmits<{
 const currentStep = ref(0);
 const highlightedElement = ref<HTMLElement | null>(null);
 const highlightedElementRect = ref<DOMRect | null>(null);
-const elementRefs = ref<Record<string, HTMLElement | null>>({});
 const previousElement = ref<HTMLElement | null>(null);
 
 // Position du modal
@@ -112,7 +112,7 @@ const modalPosition = computed<any>(() => {
 // Récupérer la position et appliquer le spotlight
 function updateHighlightedElement() {
   // Nettoyer TOUS les éléments qui pourraient avoir un spotlight
-  Object.values(elementRefs.value).forEach((element) => {
+  Object.values(props.elementRefs).forEach((element) => {
     if (element) {
       element.style.boxShadow = "";
       element.style.transition = "";
@@ -125,7 +125,7 @@ function updateHighlightedElement() {
   if (currentStep.value < props.steps.length) {
     const step = props.steps[currentStep.value];
     if (step) {
-      const element = elementRefs.value[step.refName];
+      const element = props.elementRefs[step.refName];
       if (element) {
         highlightedElement.value = element;
         highlightedElementRect.value = element.getBoundingClientRect();
@@ -171,7 +171,7 @@ function prevStep() {
 
 function completeTutorial() {
   // Nettoyer TOUS les éléments
-  Object.values(elementRefs.value).forEach((element) => {
+  Object.values(props.elementRefs).forEach((element) => {
     if (element) {
       element.style.boxShadow = "";
       element.style.transition = "";
@@ -202,6 +202,15 @@ watch(
   },
 );
 
+// Re-appliquer le spotlight quand les refs changent
+watch(
+  () => props.elementRefs,
+  () => {
+    nextTick(() => updateHighlightedElement());
+  },
+  { deep: true },
+);
+
 onMounted(() => {
   window.addEventListener("resize", updateHighlightedElement);
   nextTick(() => updateHighlightedElement());
@@ -209,17 +218,6 @@ onMounted(() => {
   return () => {
     window.removeEventListener("resize", updateHighlightedElement);
   };
-});
-
-defineExpose({
-  setElementRef: (name: string, element: HTMLElement | null) => {
-    elementRefs.value[name] = element;
-    // Mettre à jour le spotlight si c'est pour l'étape courante
-    const step = props.steps[currentStep.value];
-    if (step && step.refName === name && element) {
-      nextTick(() => updateHighlightedElement());
-    }
-  },
 });
 </script>
 
