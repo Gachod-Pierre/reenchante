@@ -175,7 +175,7 @@ async function confirmDelete() {
 
 <template>
   <div
-    class="p-6 md:p-8 rounded-3xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl"
+    class="h-full p-6 md:p-8 rounded-3xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl"
     :style="{
       borderColor: '#FF69B4',
       backgroundColor: 'rgba(255, 255, 255, 0.8)',

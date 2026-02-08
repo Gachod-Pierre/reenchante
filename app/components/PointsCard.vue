@@ -12,7 +12,7 @@ withDefaults(defineProps<Props>(), {
 
 <template>
   <div
-    class="flex-1 p-6 md:p-8 rounded-3xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl"
+    class="flex-1 h-full p-6 md:p-8 rounded-3xl border-2 backdrop-blur-sm transition-all duration-300 hover:shadow-xl"
     :style="{
       borderColor: '#FF69B4',
       backgroundColor: 'rgba(255, 255, 255, 0.8)',

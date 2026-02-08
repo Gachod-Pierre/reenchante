@@ -121,6 +121,50 @@ const hasReachedDailyLimit = computed(
   () => (dailyValidationCount.value ?? 0) >= 5,
 );
 
+// État du tutoriel dashboard
+const isDashboardTutorialOpen = ref(false);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const dashboardTutorialRef = ref<any>(null);
+
+// Refs pour les sections du tutoriel
+const userProfileCardRef = ref<HTMLElement | null>(null);
+const pointsCardRef = ref<HTMLElement | null>(null);
+const dedesInProgressSectionRef = ref<HTMLElement | null>(null);
+const dedesValidatedSectionRef = ref<HTMLElement | null>(null);
+
+// Étapes du tutoriel dashboard
+const dashboardTutorialSteps = [
+  {
+    title: "Votre Profil",
+    description:
+      "Ici vous pouvez voir et éditer votre profil utilisateur, changer votre avatar, modifier votre nom, et supprimer votre compte si nécessaire.",
+    refName: "userProfileCard",
+    buttonLabel: "Suivant",
+  },
+  {
+    title: "Vos Points",
+    description:
+      "Ces points de réenchantement représentent votre impact personnel. Accumulez-les en complétant des bonnes actions pour grimper dans le classement !",
+    refName: "pointsCard",
+    buttonLabel: "Suivant",
+  },
+  {
+    title: "Bonnes Actions en Cours",
+    description:
+      "Voici les bonnes actions que vous avez sélectionnées mais que vous n'avez pas encore soumises. Vous pouvez cliquer sur une action pour la soumettre avec une preuve en image.",
+    refName: "dedesInProgressSection",
+    buttonLabel: "Suivant",
+  },
+  {
+    title: "Bonnes Actions Validées",
+    description:
+      "Toutes les bonnes actions que vous avez soumises et qui ont été validées apparaîtront ici ! Vous pouvez les filtrer, les trier, et les rechercher pour retrouver facilement vos actions passées.",
+    refName: "dedesValidatedSection",
+    buttonLabel: "Aller à la page des bonnes actions",
+    buttonAction: () => navigateTo("/actions"),
+  },
+];
+
 // Afficher le modal quand la limite est atteinte
 watch(
   hasReachedDailyLimit,
@@ -234,6 +278,64 @@ const filteredAndSortedDeeds = computed(() => {
 
   return sorted;
 });
+
+// Initialiser le tutoriel au montage
+onMounted(() => {
+  if (import.meta.client) {
+    const hasDashboardTutorialCompleted = localStorage.getItem(
+      "dashboard_tutorial_completed",
+    );
+    if (!hasDashboardTutorialCompleted) {
+      // Attendre que le DOM soit rendu
+      nextTick(() => {
+        // Enregistrer les refs auprès du composant tutoriel
+        const tutorial = dashboardTutorialRef.value;
+        tutorial?.setElementRef("userProfileCard", userProfileCardRef.value);
+        tutorial?.setElementRef("pointsCard", pointsCardRef.value);
+        tutorial?.setElementRef(
+          "dedesInProgressSection",
+          dedesInProgressSectionRef.value,
+        );
+        tutorial?.setElementRef(
+          "dedesValidatedSection",
+          dedesValidatedSectionRef.value,
+        );
+        isDashboardTutorialOpen.value = true;
+      });
+    }
+  }
+});
+
+// Watcher pour enregistrer les refs quand elles changent
+watch(
+  [
+    userProfileCardRef,
+    pointsCardRef,
+    dedesInProgressSectionRef,
+    dedesValidatedSectionRef,
+  ],
+  () => {
+    if (dashboardTutorialRef.value && isDashboardTutorialOpen.value) {
+      const tutorial = dashboardTutorialRef.value;
+      tutorial?.setElementRef("userProfileCard", userProfileCardRef.value);
+      tutorial?.setElementRef("pointsCard", pointsCardRef.value);
+      tutorial?.setElementRef(
+        "dedesInProgressSection",
+        dedesInProgressSectionRef.value,
+      );
+      tutorial?.setElementRef(
+        "dedesValidatedSection",
+        dedesValidatedSectionRef.value,
+      );
+    }
+  },
+  { flush: "post" },
+);
+
+// Fonction pour réouvrir le tutoriel (optionnel - pour usage futur)
+function _restartDashboardTutorial() {
+  isDashboardTutorialOpen.value = true;
+}
 </script>
 
 <template>
@@ -256,6 +358,14 @@ const filteredAndSortedDeeds = computed(() => {
       @close="showDailyLimitModal = false"
     />
 
+    <!-- Tutoriel du Dashboard -->
+    <DashboardTutorial
+      ref="dashboardTutorialRef"
+      :is-open="isDashboardTutorialOpen"
+      :steps="dashboardTutorialSteps"
+      @update:is-open="isDashboardTutorialOpen = $event"
+    />
+
     <!-- Contenu principal -->
     <div class="pt-16 px-4 md:px-8 lg:px-12 pb-12">
       <div class="max-w-6xl mx-auto">
@@ -272,29 +382,33 @@ const filteredAndSortedDeeds = computed(() => {
         </h1>
 
         <!-- Section Profil et Points combinée -->
-        <div class="mb-12 flex flex-col lg:flex-row gap-6">
+        <div class="mb-12 flex flex-col lg:flex-row gap-6 items-stretch">
           <!-- Case 1: Infos Utilisateur + Bouton Déconnexion (composant externalisé) -->
-          <UserProfileCard
-            :user-profile="userProfile ?? null"
-            :user="user"
-            :is-editing-profile="isEditingProfile"
-            :edited-username="editedUsername"
-            :edited-avatar-url="editedAvatarUrl"
-            :is-uploading-avatar="isUploadingAvatar"
-            :user-id="userId!"
-            @update:is-editing-profile="isEditingProfile = $event"
-            @update:edited-username="editedUsername = $event"
-            @update:edited-avatar-url="editedAvatarUrl = $event"
-            @sign-out="handleSignOut"
-            @profile-updated="handleProfileUpdated"
-          />
+          <div ref="userProfileCardRef">
+            <UserProfileCard
+              :user-profile="userProfile ?? null"
+              :user="user"
+              :is-editing-profile="isEditingProfile"
+              :edited-username="editedUsername"
+              :edited-avatar-url="editedAvatarUrl"
+              :is-uploading-avatar="isUploadingAvatar"
+              :user-id="userId!"
+              @update:is-editing-profile="isEditingProfile = $event"
+              @update:edited-username="editedUsername = $event"
+              @update:edited-avatar-url="editedAvatarUrl = $event"
+              @sign-out="handleSignOut"
+              @profile-updated="handleProfileUpdated"
+            />
+          </div>
 
           <!-- Case 2: Points de réenchantement (composant externalisé) -->
-          <PointsCard :total-points="userProfile?.total_points ?? 0" />
+          <div ref="pointsCardRef" class="flex-1">
+            <PointsCard :total-points="userProfile?.total_points ?? 0" />
+          </div>
         </div>
 
         <!-- Section Mes bonnes actions en cours -->
-        <div class="mb-12">
+        <div ref="dedesInProgressSectionRef" class="mb-12">
           <h2
             class="text-3xl md:text-4xl font-black mb-6"
             :style="{ color: '#FF1493' }"
@@ -333,7 +447,7 @@ const filteredAndSortedDeeds = computed(() => {
         </div>
 
         <!-- Section Mes bonnes actions validées -->
-        <div>
+        <div ref="dedesValidatedSectionRef">
           <h2
             class="text-3xl md:text-4xl font-black mb-6"
             :style="{ color: '#FF1493' }"
