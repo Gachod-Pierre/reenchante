@@ -253,7 +253,13 @@ watch(
 watch(
   () => props.isOpen,
   (newVal) => {
-    if (!newVal) {
+    if (newVal) {
+      // Bloquer le scroll quand le tutorial s'ouvre
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      // Rétablir le scroll quand le tutorial se ferme
+      document.documentElement.style.overflow = "";
+
       // Nettoyer l'élément actuellement en spotlight
       if (highlightedElement.value) {
         highlightedElement.value.style.boxShadow = "";
@@ -292,6 +298,9 @@ onMounted(() => {
 
 // Nettoyer complètement quand le composant est démonté
 onBeforeUnmount(() => {
+  // Rétablir le scroll au cas où le tutorial serait encore ouvert
+  document.documentElement.style.overflow = "";
+
   // Nettoyer l'élément actuellement en spotlight
   if (highlightedElement.value) {
     highlightedElement.value.style.boxShadow = "";
