@@ -99,6 +99,16 @@ function closeWizard() {
 
         <!-- Contenu de l'étape -->
         <div class="mb-8">
+          <!-- Numéro de l'étape -->
+          <div class="mb-3">
+            <span
+              class="inline-block px-3 py-1 rounded-full text-sm font-bold text-white"
+              :style="{ backgroundColor: '#FF1493' }"
+            >
+              Étape {{ currentStep + 1 }} / {{ totalSteps }}
+            </span>
+          </div>
+
           <h2 class="text-3xl font-black mb-4" :style="{ color: '#FF1493' }">
             {{ steps[currentStep]?.title }}
           </h2>
@@ -150,11 +160,6 @@ function closeWizard() {
             C'est parti ! 🚀
           </button>
         </div>
-
-        <!-- Compte des étapes -->
-        <p class="text-center text-gray-500 text-sm mt-4">
-          Étape {{ currentStep + 1 }} sur {{ totalSteps }}
-        </p>
       </div>
     </div>
   </Teleport>
