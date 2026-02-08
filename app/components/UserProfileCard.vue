@@ -291,8 +291,8 @@ async function confirmDelete() {
               </button>
               <button
                 class="px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold text-sm md:text-base flex items-center gap-2 text-white bg-red-500 hover:bg-red-600 transition-all duration-300 hover:scale-105"
-                @click="openDeleteConfirmation"
                 title="Supprimer le compte"
+                @click="openDeleteConfirmation"
               >
                 <svg
                   class="w-5 h-5"

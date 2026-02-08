@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed, nextTick } from "vue";
+import {
+  ref,
+  onMounted,
+  onUnmounted,
+  watch,
+  computed,
+  nextTick,
+  inject,
+} from "vue";
 import { useGLTF } from "@tresjs/cientos";
 import * as THREE from "three";
 import { useSceneAnimation } from "../composables/useSceneAnimation";
@@ -11,7 +19,9 @@ import { useCloudGenerator } from "../composables/useCloudGenerator";
 import { useCloudInstancedMesh } from "../composables/useCloudInstancedMesh";
 import { useUserDeedsByContinent } from "../composables/useUserDeedsByContinent";
 import ContinentOverlay from "./ContinentOverlay.vue";
-import InstructionModal from "./InstructionModal.vue";
+
+// Injection de la fonction pour ouvrir le wizard d'onboarding
+const openOnboarding = inject<() => void>("openOnboarding", () => {});
 
 const { state: gltf } = useGLTF("/models/earth-cartoon.glb");
 const canvasRef = ref();
@@ -59,7 +69,6 @@ const isOverlayOpen = ref(false);
 const hoveredPingId = ref<string | null>(null);
 const mouseX = ref(0);
 const mouseY = ref(0);
-const showInstructionModal = ref(false); // Sera déterminé par localStorage
 let isLoadingDeeds = false;
 
 // Mapping des IDs de continents aux noms
@@ -145,18 +154,6 @@ watch(windowWidth, (newWidth) => {
 });
 
 onMounted(async () => {
-  // ✅ Vérifier si le modal a déjà été vu
-  const hasSeenInstructionModal = localStorage.getItem(
-    "hasSeenInstructionModal",
-  );
-  if (!hasSeenInstructionModal) {
-    showInstructionModal.value = true;
-    // Marquer le modal comme vu après un délai (après que l'utilisateur l'a fermé)
-    setTimeout(() => {
-      localStorage.setItem("hasSeenInstructionModal", "true");
-    }, 5000); // 5 secondes avant de marquer comme vu
-  }
-
   // ✅ Animer le titre avec GSAP
   await nextTick();
   animateTitleLetters(titleRef.value);
@@ -530,13 +527,27 @@ onUnmounted(() => {
       @close="isOverlayOpen = false"
     />
 
-    <!-- Modal d'instructions -->
-    <InstructionModal
-      :is-visible="showInstructionModal"
-      :delay="500"
-      :show-floating-button="true"
-      @close="showInstructionModal = false"
-    />
+    <!-- Bouton flottant pour réouvrir le wizard d'onboarding -->
+    <button
+      class="fixed bottom-8 right-8 z-40 w-16 h-16 rounded-full text-white shadow-lg hover:shadow-xl transition flex items-center justify-center animate-bounce"
+      :style="{ backgroundColor: '#FF1493' }"
+      aria-label="Aide"
+      @click="openOnboarding"
+    >
+      <svg
+        class="w-8 h-8"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    </button>
 
     <!-- Card hover pour afficher le nom du continent -->
     <transition name="fade">
@@ -553,3 +564,19 @@ onUnmounted(() => {
     </transition>
   </div>
 </template>
+
+<style scoped>
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 2s infinite;
+}
+</style>
