@@ -149,7 +149,7 @@ const dashboardTutorialSteps = [
   {
     title: "Bonnes Actions en Cours",
     description:
-      "Voici les bonnes actions que vous avez sélectionnées mais que vous n'avez pas encore soumises. Vous pouvez cliquer sur une action pour la soumettre avec une preuve en image.",
+      "Toutes les bonnes actions que vous avez sélectionnées mais que vous n'avez pas encore soumises apparaîtront ici ! Vous pouvez cliquer sur une action pour la soumettre avec une preuve en image.",
     refName: "dedesInProgressSection",
     buttonLabel: "Suivant",
   },
