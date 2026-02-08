@@ -25,7 +25,7 @@
               class="text-xl md:text-2xl font-black mb-4"
               :style="{ color: '#FF1493' }"
             >
-              Réenchanter
+              Réenchante
             </h3>
             <p class="text-sm md:text-base text-gray-600 leading-relaxed mb-4">
               Une plateforme communautaire où chacun peut réaliser ses bonnes
@@ -90,7 +90,7 @@
                   href="mailto:contact@reenchanter.com"
                   class="font-semibold transition-colors duration-300 hover:underline hover:text-[#D9187F] text-[#FF1493]"
                 >
-                  contact@reenchanter.com
+                  contact@reenchante.com
                 </a>
               </p>
               <p class="text-sm md:text-base text-gray-600">
