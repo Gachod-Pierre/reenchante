@@ -94,7 +94,7 @@ const toggleTag = (tag: string) => {
         <div class="flex flex-wrap gap-1 sm:gap-2">
           <button
             :class="[
-              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 hover:scale-105',
               props.sortBy === 'none'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -111,7 +111,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 hover:scale-105',
               props.sortBy === 'points'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -128,7 +128,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 hover:scale-105',
               props.sortBy === 'date'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -145,7 +145,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 hover:scale-105',
               props.sortBy === 'difficulty'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -172,7 +172,7 @@ const toggleTag = (tag: string) => {
         <div class="flex flex-wrap gap-1 sm:gap-2">
           <button
             :class="[
-              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 hover:scale-105',
               props.sortOrder === 'asc'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -189,7 +189,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 hover:scale-105',
               props.sortOrder === 'desc'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -215,7 +215,7 @@ const toggleTag = (tag: string) => {
         <div class="flex flex-wrap gap-1 sm:gap-2">
           <button
             :class="[
-              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 hover:scale-105',
               props.difficultyLevel === 'none'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -233,7 +233,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 hover:scale-105',
               props.difficultyLevel === 'facile'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -251,7 +251,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 hover:scale-105',
               props.difficultyLevel === 'moyen'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
@@ -269,7 +269,7 @@ const toggleTag = (tag: string) => {
           </button>
           <button
             :class="[
-              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all',
+              'px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 hover:scale-105',
               props.difficultyLevel === 'difficile'
                 ? 'text-white'
                 : 'bg-white text-gray-700 border-2',
