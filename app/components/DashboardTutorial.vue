@@ -35,6 +35,7 @@ const currentStep = ref(0);
 const highlightedElement = ref<HTMLElement | null>(null);
 const highlightedElementRect = ref<DOMRect | null>(null);
 const previousElement = ref<HTMLElement | null>(null);
+const modalRef = ref<HTMLElement | null>(null);
 
 // Position du modal
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -132,29 +133,28 @@ function updateHighlightedElement() {
   }
 }
 
-// Scroller pour montrer l'élément et le modal
+// Scroller en deux étapes: d'abord l'élément, ensuite le modal
 function scrollModalIntoView() {
-  if (!highlightedElement.value) return;
+  if (!highlightedElement.value || !modalRef.value) return;
 
   const element = highlightedElement.value;
-  const rect = element.getBoundingClientRect();
+  const elementRect = element.getBoundingClientRect();
   const minMargin = 16;
 
-  // Vérifier si l'élément est visible
-  const isVisible =
-    rect.top >= minMargin && rect.bottom <= window.innerHeight - minMargin;
+  // ÉTAPE 1: Vérifier si l'élément est visible
+  const isElementVisible =
+    elementRect.top >= minMargin &&
+    elementRect.bottom <= window.innerHeight - minMargin;
 
-  if (!isVisible) {
-    // Scroller juste assez pour rendre l'élément visible (ne pas le mettre en haut)
+  if (!isElementVisible) {
+    // Scroller pour rendre l'élément visible d'abord
     let targetScroll = window.scrollY;
 
-    if (rect.top < minMargin) {
-      // L'élément est au-dessus, scroller vers le haut juste assez
-      targetScroll = Math.max(0, rect.top + window.scrollY - minMargin);
-    } else if (rect.bottom > window.innerHeight - minMargin) {
-      // L'élément est au-dessous, scroller vers le bas juste assez
+    if (elementRect.top < minMargin) {
+      targetScroll = Math.max(0, elementRect.top + window.scrollY - minMargin);
+    } else if (elementRect.bottom > window.innerHeight - minMargin) {
       targetScroll =
-        rect.bottom + window.scrollY - window.innerHeight + minMargin;
+        elementRect.bottom + window.scrollY - window.innerHeight + minMargin;
     }
 
     window.scrollTo({
@@ -162,18 +162,74 @@ function scrollModalIntoView() {
       behavior: "smooth",
     });
 
-    // Pendant le scroll, mettre à jour la rect en continu pour que le modal suive fluidement
+    // Attendre la fin du scroll (600ms) puis faire le second scroll pour le modal
     const handleScroll = () => {
-      highlightedElementRect.value = element.getBoundingClientRect();
+      if (highlightedElement.value) {
+        highlightedElementRect.value =
+          highlightedElement.value.getBoundingClientRect();
+      }
     };
 
     window.addEventListener("scroll", handleScroll);
 
-    // Arrêter de suivre après 600ms (fin du scroll smooth)
     setTimeout(() => {
       window.removeEventListener("scroll", handleScroll);
-      // Dernière mise à jour pour s'assurer qu'on est bien aligné
-      highlightedElementRect.value = element.getBoundingClientRect();
+      if (highlightedElement.value) {
+        highlightedElementRect.value =
+          highlightedElement.value.getBoundingClientRect();
+      }
+      // ÉTAPE 2: Après le premier scroll, faire le scroll pour le modal
+      scrollModalIntoViewSecondPass();
+    }, 600);
+  } else {
+    // L'élément est déjà visible, faire directement le scroll du modal
+    scrollModalIntoViewSecondPass();
+  }
+}
+
+// Deuxième passe: scroller pour voir le modal complètement
+function scrollModalIntoViewSecondPass() {
+  if (!modalRef.value) return;
+
+  const modalRect = modalRef.value.getBoundingClientRect();
+  const minMargin = 16;
+
+  // Vérifier si le modal est complètement visible
+  const isModalVisible =
+    modalRect.top >= minMargin &&
+    modalRect.bottom <= window.innerHeight - minMargin;
+
+  if (!isModalVisible) {
+    let targetScroll = window.scrollY;
+
+    if (modalRect.top < minMargin) {
+      targetScroll = Math.max(0, modalRect.top + window.scrollY - minMargin);
+    } else if (modalRect.bottom > window.innerHeight - minMargin) {
+      targetScroll =
+        modalRect.bottom + window.scrollY - window.innerHeight + minMargin;
+    }
+
+    window.scrollTo({
+      top: targetScroll,
+      behavior: "smooth",
+    });
+
+    // Mettre à jour la position de l'élément pendant le scroll
+    const handleScroll = () => {
+      if (highlightedElement.value) {
+        highlightedElementRect.value =
+          highlightedElement.value.getBoundingClientRect();
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    setTimeout(() => {
+      window.removeEventListener("scroll", handleScroll);
+      if (highlightedElement.value) {
+        highlightedElementRect.value =
+          highlightedElement.value.getBoundingClientRect();
+      }
     }, 600);
   }
 }
@@ -236,7 +292,10 @@ function computeDotsStyle(index: number) {
 watch(
   () => currentStep.value,
   () => {
-    nextTick(() => updateHighlightedElement());
+    nextTick(() => {
+      updateHighlightedElement();
+      scrollModalIntoView();
+    });
   },
 );
 
@@ -254,12 +313,9 @@ watch(
   () => props.isOpen,
   (newVal) => {
     if (newVal) {
-      // Bloquer le scroll quand le tutorial s'ouvre
-      document.documentElement.style.overflow = "hidden";
+      // Ne pas bloquer le scroll - le modal est en position fixed et scroll correctement
+      nextTick(() => scrollModalIntoView());
     } else {
-      // Rétablir le scroll quand le tutorial se ferme
-      document.documentElement.style.overflow = "";
-
       // Nettoyer l'élément actuellement en spotlight
       if (highlightedElement.value) {
         highlightedElement.value.style.boxShadow = "";
@@ -332,6 +388,7 @@ onBeforeUnmount(() => {
     <div v-if="isOpen" class="fixed inset-0" style="z-index: 59">
       <!-- Modal d'explication -->
       <div
+        ref="modalRef"
         class="bg-white rounded-2xl p-6 shadow-2xl animate-scaleIn"
         :style="{
           ...modalPosition,
