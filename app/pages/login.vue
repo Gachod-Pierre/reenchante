@@ -13,10 +13,6 @@ const planetOffset = ref(0);
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
 
-const redirectUrl = `${
-  typeof window !== "undefined" ? window.location.origin : ""
-}/confirm`;
-
 onMounted(() => {
   window.addEventListener("scroll", handleParallax);
 });
@@ -38,7 +34,7 @@ async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: redirectUrl,
+      redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/confirm`,
     },
   });
   if (error) errorMsg.value = error.message;
@@ -47,30 +43,46 @@ async function signInWithGoogle() {
 async function signUp() {
   errorMsg.value = "";
   loading.value = true;
-  const { error } = await supabase.auth.signUp({
-    email: email.value,
-    password: password.value,
-  });
-  loading.value = false;
-  if (error) {
-    errorMsg.value = error.message;
-  } else {
-    window.location.href = redirectUrl;
+  try {
+    const { error } = await supabase.auth.signUp({
+      email: email.value,
+      password: password.value,
+      options: {
+        emailRedirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/email-confirmation`,
+      },
+    });
+    console.log("✅ SignUp result:", {
+      error,
+      currentUser: user.value?.email || "no user",
+    });
+    if (error) {
+      errorMsg.value = error.message;
+      loading.value = false;
+    } else {
+      console.log("🎯 Navigating to /email-confirmation");
+      await navigateTo("/email-confirmation");
+    }
+  } catch (err: any) {
+    console.error("❌ SignUp error:", err);
+    errorMsg.value = err.message || "Erreur lors de l'inscription";
+    loading.value = false;
   }
 }
 
 async function signIn() {
   errorMsg.value = "";
   loading.value = true;
-  const { error } = await supabase.auth.signInWithPassword({
+  const { error, data } = await supabase.auth.signInWithPassword({
     email: email.value,
     password: password.value,
   });
   loading.value = false;
   if (error) {
     errorMsg.value = error.message;
+  } else if (data.session) {
+    await navigateTo("/confirm");
   } else {
-    window.location.href = redirectUrl;
+    errorMsg.value = "Connexion échouée";
   }
 }
 
@@ -117,9 +129,7 @@ const pageStyle = {
           >
             Réenchante
           </h1>
-          <p class="text-gray-600 text-base md:text-lg">
-            le monde 🌍✨
-          </p>
+          <p class="text-gray-600 text-base md:text-lg">le monde 🌍✨</p>
         </div>
 
         <!-- Texte explicatif -->
@@ -133,8 +143,8 @@ const pageStyle = {
           <p class="text-gray-700 text-sm md:text-base leading-relaxed">
             Réenchante est une plateforme communautaire où chacun peut réaliser
             des bonnes actions et contribuer à rendre le monde un peu plus beau.
-            <br >
-            <br >
+            <br />
+            <br />
             Soumets tes preuves de bienveillance, accumule des points et grimpe
             le classement mondial ! 💛
           </p>
@@ -195,7 +205,7 @@ const pageStyle = {
                   :style="{
                     borderColor: '#FF69B4',
                   }"
-                >
+                />
               </div>
 
               <div>
@@ -213,7 +223,7 @@ const pageStyle = {
                   :style="{
                     borderColor: '#FF69B4',
                   }"
-                >
+                />
               </div>
             </div>
 

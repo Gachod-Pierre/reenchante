@@ -2,16 +2,33 @@
 definePageMeta({ ssr: false });
 
 const user = useSupabaseUser();
+const loading = ref(true);
+const errorMsg = ref("");
 
-watch(
-  user,
-  () => {
-    if (user.value) {
-      return navigateTo("/dashboard");
+onMounted(() => {
+  // Si déjà connecté, rediriger immédiatement
+  if (user.value) {
+    navigateTo("/dashboard");
+    return;
+  }
+
+  // Sinon attendre la connexion
+  const unwatch = watch(user, (newUser) => {
+    if (newUser) {
+      unwatch();
+      navigateTo("/dashboard");
     }
-  },
-  { immediate: true },
-);
+  });
+
+  // Timeout après 10 secondes
+  setTimeout(() => {
+    if (loading.value) {
+      errorMsg.value = "Connexion expirée, veuillez réessayer";
+      loading.value = false;
+      unwatch();
+    }
+  }, 10000);
+});
 
 const pageStyle = {
   width: "100%",
@@ -29,15 +46,35 @@ const pageStyle = {
     class="flex items-center justify-center min-h-screen px-4"
   >
     <div class="text-center">
-      <!-- Spinner -->
-      <div class="flex justify-center mb-8">
-        <div class="spinner" />
+      <!-- Erreur -->
+      <div v-if="errorMsg" class="mb-8">
+        <p
+          class="text-2xl md:text-3xl font-bold mb-4"
+          :style="{ color: '#EF4444' }"
+        >
+          Oups ! ❌
+        </p>
+        <p class="text-lg text-gray-700 mb-6">
+          {{ errorMsg }}
+        </p>
+        <NuxtLink
+          to="/login"
+          class="inline-block px-6 py-3 rounded-lg font-bold text-white transition-all duration-300 hover:scale-105"
+          :style="{ backgroundColor: '#FF1493' }"
+        >
+          Retour à la connexion
+        </NuxtLink>
       </div>
 
-      <!-- Texte -->
-      <p class="text-2xl md:text-3xl font-bold" :style="{ color: '#FF1493' }">
-        Direction le Réenchantement du monde ! 😁
-      </p>
+      <!-- Chargement -->
+      <div v-else-if="loading" class="mb-8">
+        <div class="flex justify-center mb-8">
+          <div class="spinner" />
+        </div>
+        <p class="text-2xl md:text-3xl font-bold" :style="{ color: '#FF1493' }">
+          Direction le Réenchantement du monde ! 😁
+        </p>
+      </div>
     </div>
   </div>
 </template>

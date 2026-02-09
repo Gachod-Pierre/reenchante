@@ -3,10 +3,6 @@ export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
   css: ["./app/assets/css/main.css"],
-  devServer: {
-    host: "0.0.0.0",
-    port: 5173,
-  },
   modules: [
     "@nuxt/eslint",
     "@nuxt/icon",
@@ -20,7 +16,7 @@ export default defineNuxtConfig({
     redirectOptions: {
       login: "/login",
       callback: "/confirm",
-      exclude: ["/", "/gallery"],
+      exclude: ["/", "/gallery", "/email-confirmation"],
     },
   },
 });
