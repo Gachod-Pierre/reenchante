@@ -44,6 +44,7 @@ const pageStyle = {
   <div
     :style="pageStyle"
     class="flex items-center justify-center min-h-screen px-4"
+    style="cursor: default"
   >
     <div class="text-center">
       <!-- Erreur -->
@@ -69,7 +70,29 @@ const pageStyle = {
       <!-- Chargement -->
       <div v-else-if="loading" class="mb-8">
         <div class="flex justify-center mb-8">
-          <div class="spinner" />
+          <svg
+            class="spinner-svg"
+            viewBox="0 0 50 50"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="25"
+              cy="25"
+              r="20"
+              fill="none"
+              stroke="#ff69b4"
+              stroke-width="4"
+            />
+            <circle
+              cx="25"
+              cy="25"
+              r="20"
+              fill="none"
+              stroke="#ff1493"
+              stroke-width="4"
+              stroke-dasharray="31.4 125.6"
+            />
+          </svg>
         </div>
         <p class="text-2xl md:text-3xl font-bold" :style="{ color: '#FF1493' }">
           Direction le Réenchantement du monde ! 😁
@@ -80,13 +103,11 @@ const pageStyle = {
 </template>
 
 <style scoped>
-.spinner {
+.spinner-svg {
   width: 50px;
   height: 50px;
-  border: 4px solid #ff69b4;
-  border-top-color: #ff1493;
-  border-radius: 50%;
   animation: spin 1s linear infinite;
+  outline: none !important;
 }
 
 @keyframes spin {
