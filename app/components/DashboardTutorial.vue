@@ -385,7 +385,7 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <div v-if="isOpen" class="fixed inset-0" style="z-index: 59">
+    <div v-if="isOpen" class="fixed inset-0" style="z-index: 99999">
       <!-- Modal d'explication -->
       <div
         ref="modalRef"
@@ -394,7 +394,7 @@ onBeforeUnmount(() => {
           ...modalPosition,
           width: '90%',
           maxWidth: '450px',
-          zIndex: 59,
+          zIndex: 99999,
         }"
       >
         <!-- Numéro de l'étape -->
