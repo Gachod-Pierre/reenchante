@@ -124,8 +124,7 @@ const pageStyle = {
         </p>
         <NuxtLink
           to="/dashboard"
-          class="inline-block px-6 py-3 rounded-lg font-bold text-white transition-all duration-300 hover:scale-105"
-          :style="{ backgroundColor: '#FF1493' }"
+          class="inline-block px-6 py-3 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-lg hover:scale-105 bg-[#FF1493] hover:bg-[#D9187F]"
         >
           Aller à la Dashboard
         </NuxtLink>
