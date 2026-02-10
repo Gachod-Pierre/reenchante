@@ -19,11 +19,12 @@ onMounted(async () => {
   });
 
   // Si token présent, vérifier l'email d'abord
-  if (tokenHash && type === "email") {
+  // Note: Supabase envoie type="signup" pour les emails de confirmation de signup
+  if (tokenHash && (type === "signup" || type === "email")) {
     console.log("🔐 Verifying OTP token...");
-    const { error } = await supabase.auth.verifyOtp({
+    const { error, data } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
-      type: "email",
+      type: "signup",
     });
 
     if (error) {
@@ -32,7 +33,15 @@ onMounted(async () => {
       errorMsg.value = error.message;
       return;
     } else {
-      console.log("✅ Email verified!");
+      console.log("✅ Email verified!", data?.user?.email);
+      // Rafraîchir la session après vérification
+      const { data: session } = await supabase.auth.getSession();
+      if (session?.session?.user) {
+        console.log("👤 Session updated after verification");
+        loading.value = false;
+        isConnected.value = true;
+        return;
+      }
     }
   }
 
@@ -46,8 +55,9 @@ onMounted(async () => {
 
   // Écouter les changements de session en temps réel (fonctionne même si confirmé depuis un autre appareil)
   console.log("⏳ Waiting for user connection...");
+  let subscription: any;
   const {
-    data: { subscription },
+    data: { subscription: authSubscription },
   } = supabase.auth.onAuthStateChange((event, session) => {
     console.log("🔄 Auth state changed:", event, !!session?.user);
     if (session?.user) {
@@ -57,6 +67,7 @@ onMounted(async () => {
       subscription?.unsubscribe();
     }
   });
+  subscription = authSubscription;
 
   // Cleanup subscription quand le composant est démonté
   onBeforeUnmount(() => {
@@ -112,12 +123,12 @@ const pageStyle = {
         <p class="text-lg text-gray-700 mb-6">
           Nous avons envoyé un lien de confirmation à votre adresse email, si
           vous ne voyez rien vérifiez vos spams ! 😉
-          <br >
-          <br >
+          <br />
+          <br />
           Cliquez sur le lien pour confirmer votre compte et commencer à
           réenchanter le monde ! ✨
-          <br >
-          <br >
+          <br />
+          <br />
           Si vous n'avez rien reçu, un compte existe déjà avec cette adresse
           email, essayez de vous connecter directement ou réinitialisez votre
           mot de passe.
