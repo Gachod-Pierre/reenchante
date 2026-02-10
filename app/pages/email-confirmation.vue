@@ -17,14 +17,15 @@ onMounted(async () => {
     tokenHash: !!tokenHash,
     type,
     isUserConnected: !!user.value,
+    allQueryParams: route.query,
   });
 
   // Si token présent, vérifier l'email d'abord
-  if (tokenHash && type === "email") {
-    console.log("🔐 Verifying OTP token...");
+  if (tokenHash && (type === "email" || type === "signup")) {
+    console.log("🔐 Verifying OTP token...", { tokenHash, type });
     const { error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
-      type: "email",
+      type: (type as "email" | "signup") || "email",
     });
 
     if (error) {
@@ -34,8 +35,13 @@ onMounted(async () => {
       return;
     } else {
       console.log("✅ Email verified!");
-      loading.value = false;
       
+      // Attendre que user.value se mette à jour après verifyOtp
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      console.log("✅ After verifyOtp - user.value:", user.value?.email);
+      loading.value = false;
+
       // Vérifier si utilisateur est connecté après verifyOtp
       if (user.value) {
         console.log("✅ Same device - User connected:", user.value.email);
@@ -115,8 +121,8 @@ const pageStyle = {
         </p>
         <p class="text-lg text-gray-700 mb-6">
           Nous avons envoyé un lien de confirmation à votre adresse email.
-          <br >
-          <br >
+          <br />
+          <br />
           Cliquez sur le lien pour confirmer votre compte et commencer à
           réenchanter le monde ! ✨
         </p>
@@ -153,7 +159,8 @@ const pageStyle = {
           Email vérifié !
         </p>
         <p class="text-lg text-gray-700 mb-6">
-          Votre email a été confirmé avec succès. Connectez-vous pour accéder à votre dashboard.
+          Votre email a été confirmé avec succès. Connectez-vous pour accéder à
+          votre dashboard.
         </p>
         <NuxtLink
           to="/login"
