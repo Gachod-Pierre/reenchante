@@ -25,13 +25,13 @@ const pageStyle = {
       >
         Email vérifié !
       </p>
-      
+
       <!-- Texte si pas connecté -->
       <p v-if="!user" class="text-lg text-gray-700 mb-6">
         Votre email a été confirmé avec succès. Vous pouvez fermer cette page ou
         vous connecter.
       </p>
-      
+
       <!-- Texte si connecté -->
       <p v-else class="text-lg text-gray-700 mb-6">
         Votre email a été confirmé avec succès. Vous pouvez fermer cette page ou

@@ -79,7 +79,7 @@ onMounted(async () => {
           schema: "public",
           table: "profiles",
         },
-        (payload: any) => {
+        (payload: { new: { email_verified_at: string | null } }) => {
           console.log(
             "🔔 Profile update detected - email_verified_at:",
             payload.new.email_verified_at,
@@ -190,8 +190,8 @@ const pageStyle = {
         </p>
         <p class="text-lg text-gray-700 mb-6">
           Nous avons envoyé un lien de confirmation à votre adresse email.
-          <br />
-          <br />
+          <br >
+          <br >
           Cliquez sur le lien pour confirmer votre compte et commencer à
           réenchanter le monde ! ✨
         </p>
