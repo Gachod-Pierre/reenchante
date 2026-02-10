@@ -108,7 +108,7 @@ const pageStyle = {
           Cliquez sur le lien pour confirmer votre compte et commencer à
           réenchanter le monde ! ✨
           <br >
-          <br ></br>
+          <br >
           Si vous n'avez rien reçu, un compte existe déjà avec cette adresse email, essayez de vous connecter directement ou réinitialisez votre mot de passe.
         </p>
       </div>
