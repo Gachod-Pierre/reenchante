@@ -45,31 +45,51 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-indigo-900 via-purple-900 to-black flex items-center justify-center p-4">
+  <div
+    class="min-h-screen bg-gradient-to-b from-indigo-900 via-purple-900 to-black flex items-center justify-center p-4"
+  >
     <div class="w-full max-w-md">
       <!-- Chargement -->
       <div v-if="loading" class="text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"
+        ></div>
         <p class="text-white text-lg">Vérification en cours...</p>
       </div>
 
       <!-- Erreur -->
-      <div v-else-if="errorMsg" class="bg-red-500 bg-opacity-20 border border-red-500 rounded-lg p-6 text-center">
+      <div
+        v-else-if="errorMsg"
+        class="bg-red-500 bg-opacity-20 border border-red-500 rounded-lg p-6 text-center"
+      >
         <p class="text-white text-lg mb-4">❌ {{ errorMsg }}</p>
-        <NuxtLink to="/login" class="inline-block px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+        <NuxtLink
+          to="/login"
+          class="inline-block px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+        >
           Retour à la connexion
         </NuxtLink>
       </div>
 
       <!-- Succès -->
-      <div v-else class="bg-green-500 bg-opacity-20 border border-green-500 rounded-lg p-8 text-center">
+      <div
+        v-else
+        class="bg-green-500 bg-opacity-20 border border-green-500 rounded-lg p-8 text-center"
+      >
         <p class="text-4xl mb-4">✅</p>
         <h1 class="text-white text-2xl font-bold mb-2">Email vérifié!</h1>
-        <p class="text-gray-300 mb-6">Votre adresse email a été confirmée avec succès.</p>
+        <p class="text-gray-300 mb-6">
+          Votre adresse email a été confirmée avec succès.
+        </p>
 
         <div class="space-y-3">
-          <p class="text-gray-400 text-sm">Vous pouvez fermer cette page ou vous connecter.</p>
-          <NuxtLink to="/login" class="inline-block px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+          <p class="text-gray-400 text-sm">
+            Vous pouvez fermer cette page ou vous connecter.
+          </p>
+          <NuxtLink
+            to="/login"
+            class="inline-block px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+          >
             Aller à la connexion
           </NuxtLink>
         </div>
