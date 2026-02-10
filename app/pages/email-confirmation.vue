@@ -1,24 +1,42 @@
 <script setup lang="ts">
+import type { RealtimeChannel } from "@supabase/supabase-js";
+
 definePageMeta({ ssr: false });
 
 const route = useRoute();
 const supabase = useSupabaseClient();
-const user = useSupabaseUser();
 const loading = ref(true);
 const errorMsg = ref("");
 const isConnected = ref(false);
+
+let realtimeSubscription: RealtimeChannel | null = null;
+
+onBeforeUnmount(() => {
+  if (realtimeSubscription) {
+    realtimeSubscription.unsubscribe();
+  }
+});
 
 onMounted(async () => {
   const tokenHash = route.query.token_hash as string;
   const type = route.query.type as string;
 
-  console.log("📧 Email confirmation page mounted:", {
-    tokenHash: !!tokenHash,
-    type,
-    isUserConnected: !!user.value,
-  });
+  console.log("📧 Email confirmation page mounted");
 
-  // Si token présent, vérifier l'email d'abord
+  // Vérifier la session actuelle
+  const { data: session } = await supabase.auth.getSession();
+  const currentUserId = session?.session?.user?.id;
+  console.log("🔍 Current session user:", currentUserId || "none");
+
+  // Si déjà connecté et email confirmé
+  if (currentUserId) {
+    console.log("✅ Already connected with verified email");
+    loading.value = false;
+    isConnected.value = true;
+    return;
+  }
+
+  // Si token présent, vérifier l'email
   if (tokenHash && (type === "signup" || type === "email")) {
     console.log("🔐 Verifying OTP token...");
     const { error, data } = await supabase.auth.verifyOtp({
@@ -31,91 +49,63 @@ onMounted(async () => {
       loading.value = false;
       errorMsg.value = error.message;
       return;
-    } else {
-      console.log("✅ Email verified!", data?.user?.email);
-      // Attendre que la session soit synchronisée
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const { data: session } = await supabase.auth.getSession();
-      if (session?.session?.user) {
-        console.log("👤 Session confirmed");
-        loading.value = false;
-        isConnected.value = true;
-        return;
-      }
     }
+
+    console.log("✅ Email verified! User:", data?.user?.email);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    loading.value = false;
+    isConnected.value = true;
+    return;
   }
 
-  // Watcher sur user pour detect les changements de session
-  const watchUser = watch(
-    () => user.value,
-    (newUser) => {
-      if (newUser?.id) {
-        console.log("✅ User detected:", newUser.email);
-        loading.value = false;
-        isConnected.value = true;
-        watchUser();
-      }
-    },
-    { immediate: true },
-  );
+  // Écouter les changements d'authentification
+  console.log("📡 Listening for auth state changes...");
+  const { data } = supabase.auth.onAuthStateChange((event, newSession) => {
+    console.log("🔄 Auth state change:", event, newSession?.user?.email);
 
-  // Setup Realtime listener si on a pas encore d'user
-  const setupRealtimeListener = (userId: string) => {
-    console.log("📡 Setting up Realtime listener for userId:", userId);
-    const realtimeSubscription = supabase
-      .channel(`public:profiles:id=eq.${userId}`)
+    if (event === "SIGNED_IN" && newSession?.user) {
+      console.log("✅ User signed in:", newSession.user.email);
+      loading.value = false;
+      isConnected.value = true;
+      if (realtimeSubscription) {
+        realtimeSubscription.unsubscribe();
+      }
+    }
+  });
+
+  // Cleanup
+  onBeforeUnmount(() => {
+    data?.subscription?.unsubscribe();
+    if (realtimeSubscription) {
+      realtimeSubscription.unsubscribe();
+    }
+  });
+
+  // Setup Realtime pour les changements cross-device
+  if (currentUserId) {
+    console.log("📡 Setting Realtime listener for cross-device detection");
+    realtimeSubscription = supabase
+      .channel(`profiles-${currentUserId}`)
       .on(
         "postgres_changes",
         {
           event: "UPDATE",
           schema: "public",
           table: "profiles",
-          filter: `id=eq.${userId}`,
+          filter: `id=eq.${currentUserId}`,
         },
         (payload: { new: { email_verified_at: string | null } }) => {
-          console.log("🔔 Profile changed:", payload);
+          console.log("🔔 Profile updated:", payload);
           if (payload.new.email_verified_at) {
-            console.log("✅ Email verified detected from Realtime!");
-            loading.value = false;
+            console.log("✅ Email verified from other device!");
             isConnected.value = true;
-            realtimeSubscription.unsubscribe();
-            watchUser();
+            loading.value = false;
           }
         },
       )
       .subscribe((status) => {
-        console.log("📡 Realtime subscription status:", status);
+        console.log("📡 Realtime status:", status);
       });
-
-    return realtimeSubscription;
-  };
-
-  // Si user existe déjà, mettre en place Realtime
-  if (user.value?.id) {
-    console.log("👤 User already exists, setting up Realtime");
-    const realtimeSubscription = setupRealtimeListener(user.value.id);
-
-    onBeforeUnmount(() => {
-      realtimeSubscription.unsubscribe();
-      watchUser();
-    });
-  } else {
-    // Si pas d'user, attendre son ID depuis Realtime
-    const realtimeWatcher = watch(
-      () => user.value?.id,
-      (userId) => {
-        if (userId) {
-          console.log("👤 User ID received:", userId);
-          const realtimeSubscription = setupRealtimeListener(userId);
-
-          onBeforeUnmount(() => {
-            realtimeSubscription.unsubscribe();
-            watchUser();
-            realtimeWatcher();
-          });
-        }
-      },
-    );
   }
 });
 
@@ -167,12 +157,12 @@ const pageStyle = {
         <p class="text-lg text-gray-700 mb-6">
           Nous avons envoyé un lien de confirmation à votre adresse email, si
           vous ne voyez rien vérifiez vos spams ! 😉
-          <br />
-          <br />
+          <br >
+          <br >
           Cliquez sur le lien pour confirmer votre compte et commencer à
           réenchanter le monde ! ✨
-          <br />
-          <br />
+          <br >
+          <br >
           Si vous n'avez rien reçu, un compte existe déjà avec cette adresse
           email, essayez de vous connecter directement ou réinitialisez votre
           mot de passe.
