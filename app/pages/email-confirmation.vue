@@ -14,10 +14,11 @@ onMounted(async () => {
   console.log("📧 Email confirmation page mounted", { tokenHash: !!tokenHash });
 
   // Récupérer l'ID utilisateur depuis localStorage (stocké au moment du signup)
-  const pendingUserId = typeof window !== "undefined" 
-    ? localStorage.getItem("pending_verification_user_id")
-    : null;
-  
+  const pendingUserId =
+    typeof window !== "undefined"
+      ? localStorage.getItem("pending_verification_user_id")
+      : null;
+
   console.log("🔑 Pending user ID from localStorage:", pendingUserId || "none");
 
   // Cleanup function (sera appelée à unmount)
@@ -26,21 +27,28 @@ onMounted(async () => {
   });
 
   // Toujours setup l'écoute d'authentification AVANT de faire appels API
-  const { data: authData } = supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log("🔄 Auth state change:", event, "User:", session?.user?.email);
-    
-    if (session?.user?.id) {
-      console.log("✅ Session detected, showing verified template");
-      loading.value = false;
-      isConnected.value = true;
-      
-      // Cleanup auth subscription
-      authData?.subscription?.unsubscribe();
-      
-      // Cleanup localStorage
-      localStorage.removeItem("pending_verification_user_id");
-    }
-  });
+  const { data: authData } = supabase.auth.onAuthStateChange(
+    async (event, session) => {
+      console.log(
+        "🔄 Auth state change:",
+        event,
+        "User:",
+        session?.user?.email,
+      );
+
+      if (session?.user?.id) {
+        console.log("✅ Session detected, showing verified template");
+        loading.value = false;
+        isConnected.value = true;
+
+        // Cleanup auth subscription
+        authData?.subscription?.unsubscribe();
+
+        // Cleanup localStorage
+        localStorage.removeItem("pending_verification_user_id");
+      }
+    },
+  );
 
   // Vérifier la session actuelle
   const { data: session } = await supabase.auth.getSession();
@@ -59,7 +67,7 @@ onMounted(async () => {
   // Si token présent, vérifier l'email (quand on clique le lien depuis n'importe quel device)
   if (tokenHash && (type === "signup" || type === "email")) {
     console.log("🔐 Verifying OTP token...");
-    
+
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         token_hash: tokenHash,
@@ -75,36 +83,16 @@ onMounted(async () => {
       }
 
       console.log("✅ OTP verified for:", data?.user?.email);
-      console.log("⏳ Waiting for session update via auth listener...");
       
-      // 🔑 Important: On ne fait PAS de vérification manuelle après verifyOtp()
-      // Le onAuthStateChange va se déclencher automatiquement quand la session est prête
-      // Juste attendre que le listener se déclenche
+      // 🔑 Après verifyOtp() réussi, on met directement isConnected = true
+      // Supabase ne crée pas de session "SIGNED_IN" pour la simple confirmation d'email
+      loading.value = false;
+      isConnected.value = true;
       
-      // Timeout de sécurité : si après 5 secondes rien ne s'est passé, montrer une erreur
-      const verificationTimeout = setTimeout(() => {
-        if (loading.value) {  // Si on attend toujours
-          console.warn("⚠️ Verification timeout - session not detected after 5s");
-          loading.value = false;
-          errorMsg.value = "Confirmation prenant trop de temps. Veuillez rafraîchir la page.";
-          authData?.subscription?.unsubscribe();
-        }
-      }, 5000);
-      
-      // Cleanup du timeout si la session arrive avant
-      const cleanupTimeout = () => clearTimeout(verificationTimeout);
-      
-      // On écoute les changements d'isConnected pour savoir quand on est connect
-      const checkConnection = watch(
-        () => isConnected.value,
-        (newValue) => {
-          if (newValue) {
-            console.log("✅ Connection successful via listener!");
-            cleanupTimeout();
-            checkConnection();  // Stop watching
-          }
-        }
-      );
+      // Cleanup
+      authData?.subscription?.unsubscribe();
+      localStorage.removeItem("pending_verification_user_id");
+      return;
     } catch (err) {
       const error = err as Error;
       console.error("❌ OTP error:", error.message);
@@ -113,17 +101,16 @@ onMounted(async () => {
       authData?.subscription?.unsubscribe();
       return;
     }
-    
-    // ⚠️ Important: On ne fait PAS return ici!
-    // Le listener reste actif et va mettre isConnected = true quand la session arrive
-    // Ce return permet à la fonction de continuer et le listener reste acti
   }
 
   // 🔥 NOUVELLE LOGIQUE: Si pas de token mais on a l'ID depuis localStorage
   // Cela permet de détecter la confirmation depuis un AUTRE DEVICE
   if (pendingUserId && !tokenHash) {
-    console.log("📡 Setting up Realtime listener for cross-device confirmation with userId:", pendingUserId);
-    
+    console.log(
+      "📡 Setting up Realtime listener for cross-device confirmation with userId:",
+      pendingUserId,
+    );
+
     const realtimeSubscription = supabase
       .channel(`profile-update-${pendingUserId}`)
       .on(
@@ -135,13 +122,16 @@ onMounted(async () => {
           filter: `id=eq.${pendingUserId}`,
         },
         (payload: { new: { email_verified_at: string | null } }) => {
-          console.log("🔔 Profile update detected:", payload.new.email_verified_at);
-          
+          console.log(
+            "🔔 Profile update detected:",
+            payload.new.email_verified_at,
+          );
+
           if (payload.new.email_verified_at) {
             console.log("✅ Email verified from OTHER device!");
             loading.value = false;
             isConnected.value = true;
-            
+
             // Cleanup
             realtimeSubscription.unsubscribe();
             authData?.subscription?.unsubscribe();
@@ -152,14 +142,15 @@ onMounted(async () => {
       .subscribe((status) => {
         console.log("📡 Realtime subscription status:", status);
         if (status === "SUBSCRIBED") {
-          console.log("✅ Realtime listener active - waiting for email confirmation!");
+          console.log(
+            "✅ Realtime listener active - waiting for email confirmation!",
+          );
         }
       });
   } else {
     console.log("📡 Waiting for authentication from any device...");
   }
 });
-
 
 const pageStyle = {
   width: "100%",
@@ -209,12 +200,12 @@ const pageStyle = {
         <p class="text-lg text-gray-700 mb-6">
           Nous avons envoyé un lien de confirmation à votre adresse email, si
           vous ne voyez rien vérifiez vos spams ! 😉
-          <br >
-          <br >
+          <br />
+          <br />
           Cliquez sur le lien pour confirmer votre compte et commencer à
           réenchanter le monde ! ✨
-          <br >
-          <br >
+          <br />
+          <br />
           Si vous n'avez rien reçu, un compte existe déjà avec cette adresse
           email, essayez de vous connecter directement ou réinitialisez votre
           mot de passe.

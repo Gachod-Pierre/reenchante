@@ -149,8 +149,8 @@ const pageStyle = {
           <p class="text-gray-700 text-sm md:text-base leading-relaxed">
             Réenchante est une plateforme communautaire où chacun peut réaliser
             des bonnes actions et contribuer à rendre le monde un peu plus beau.
-            <br >
-            <br >
+            <br />
+            <br />
             Soumets tes preuves de bienveillance, accumule des points et grimpe
             le classement mondial ! 💛
           </p>
@@ -211,7 +211,7 @@ const pageStyle = {
                   :style="{
                     borderColor: '#FF69B4',
                   }"
-                >
+                />
               </div>
 
               <div>
@@ -229,7 +229,7 @@ const pageStyle = {
                   :style="{
                     borderColor: '#FF69B4',
                   }"
-                >
+                />
               </div>
             </div>
 
