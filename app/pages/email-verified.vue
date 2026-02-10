@@ -24,7 +24,7 @@ onMounted(async () => {
     console.log("🔐 Verifying email with code...");
     const { error } = await supabase.auth.verifyOtp({
       token_hash: code,
-      type: "signup",
+      type: "email",
     });
 
     if (error) {
