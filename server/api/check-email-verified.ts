@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -7,25 +7,25 @@ export default defineEventHandler(async (event) => {
   if (!email) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Email parameter is required',
+      statusMessage: "Email parameter is required",
     });
   }
 
   try {
     const supabaseAdmin = createClient(
-      process.env.SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+      process.env.SUPABASE_URL || "",
+      process.env.SUPABASE_SERVICE_ROLE_KEY || "",
     );
 
     // Vérifie si le profil a email_verified_at rempli
     const { data, error } = await supabaseAdmin
-      .from('profiles')
-      .select('id, email_verified_at')
-      .eq('email', email)
+      .from("profiles")
+      .select("id, email_verified_at")
+      .eq("email", email)
       .single();
 
     if (error) {
-      console.error('❌ Error checking email:', error);
+      console.error("❌ Error checking email:", error);
       return { verified: false };
     }
 
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
     return { verified };
   } catch (err) {
-    console.error('❌ API error:', err);
+    console.error("❌ API error:", err);
     return { verified: false };
   }
 });

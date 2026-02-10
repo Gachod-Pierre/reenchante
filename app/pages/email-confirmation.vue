@@ -108,16 +108,13 @@ onMounted(async () => {
           console.log(
             "✅ Realtime listener active - waiting for email confirmation!",
           );
-          
+
           // Polling de secours: vérifier toutes les 5s si l'email est confirmé
           const pollInterval = setInterval(async () => {
             try {
-              const { verified } = await $fetch(
-                "/api/check-email-verified",
-                {
-                  query: { email },
-                },
-              );
+              const { verified } = await $fetch("/api/check-email-verified", {
+                query: { email },
+              });
 
               if (verified && !confirmed) {
                 console.log("✅ Email confirmed detected via polling!");
