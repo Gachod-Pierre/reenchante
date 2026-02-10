@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { RealtimeChannel } from "@supabase/supabase-js";
+
 definePageMeta({ ssr: false });
 
 const route = useRoute();
@@ -55,23 +57,63 @@ onMounted(async () => {
 
   // Écouter les changements de session en temps réel (fonctionne même si confirmé depuis un autre appareil)
   console.log("⏳ Waiting for user connection...");
-  let subscription: any;
+  let realtimeSubscription: RealtimeChannel | null = null;
+  let userId: string | null = null;
+
+  // 1️⃣ Écouter la session auth (même appareil)
   const {
-    data: { subscription: authSubscription },
-  } = supabase.auth.onAuthStateChange((event, session) => {
-    console.log("🔄 Auth state changed:", event, !!session?.user);
+    data: { subscription: authSub },
+  } = supabase.auth.onAuthStateChange((_event, session) => {
+    console.log("🔄 Auth state changed:", _event, !!session?.user);
     if (session?.user) {
+      userId = session.user.id;
       console.log("👤 User connected via auth change:", session.user.email);
       loading.value = false;
       isConnected.value = true;
-      subscription?.unsubscribe();
+      authSub?.unsubscribe();
+      realtimeSubscription?.unsubscribe();
     }
   });
-  subscription = authSubscription;
 
-  // Cleanup subscription quand le composant est démonté
+  // Si user existe déjà, récupérer son ID depuis la session
+  if (!userId && user.value) {
+    const { data } = await supabase.auth.getSession();
+    if (data?.session?.user?.id) {
+      userId = data.session.user.id;
+    }
+  }
+
+  // 2️⃣ Écouter Realtime sur profiles pour détecter email_verified_at (autre appareil)
+  if (userId) {
+    console.log("📡 Setting up Realtime listener for profiles...");
+    realtimeSubscription = supabase
+      .channel(`public:profiles:id=eq.${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${userId}`,
+        },
+        (payload: { new: { email_verified_at: string | null } }) => {
+          console.log("🔔 Profile updated:", payload.new);
+          if (payload.new.email_verified_at) {
+            console.log("✅ Email verified detected from another device!");
+            loading.value = false;
+            isConnected.value = true;
+            authSub?.unsubscribe();
+            realtimeSubscription?.unsubscribe();
+          }
+        },
+      )
+      .subscribe();
+  }
+
+  // Cleanup subscriptions quand le composant est démonté
   onBeforeUnmount(() => {
-    subscription?.unsubscribe();
+    authSub?.unsubscribe();
+    realtimeSubscription?.unsubscribe();
   });
 });
 
@@ -123,12 +165,12 @@ const pageStyle = {
         <p class="text-lg text-gray-700 mb-6">
           Nous avons envoyé un lien de confirmation à votre adresse email, si
           vous ne voyez rien vérifiez vos spams ! 😉
-          <br />
-          <br />
+          <br >
+          <br >
           Cliquez sur le lien pour confirmer votre compte et commencer à
           réenchanter le monde ! ✨
-          <br />
-          <br />
+          <br >
+          <br >
           Si vous n'avez rien reçu, un compte existe déjà avec cette adresse
           email, essayez de vous connecter directement ou réinitialisez votre
           mot de passe.
