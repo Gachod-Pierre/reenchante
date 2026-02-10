@@ -1,6 +1,8 @@
 <script setup lang="ts">
 definePageMeta({ ssr: false });
 
+const user = useSupabaseUser();
+
 // Style du fond quadrillé
 const pageStyle = {
   backgroundColor: "#F3F4F6",
@@ -23,16 +25,37 @@ const pageStyle = {
       >
         Email vérifié !
       </p>
-      <p class="text-lg text-gray-700 mb-6">
+      
+      <!-- Texte si pas connecté -->
+      <p v-if="!user" class="text-lg text-gray-700 mb-6">
         Votre email a été confirmé avec succès. Vous pouvez fermer cette page ou
         vous connecter.
       </p>
+      
+      <!-- Texte si connecté -->
+      <p v-else class="text-lg text-gray-700 mb-6">
+        Votre email a été confirmé avec succès. Vous pouvez fermer cette page ou
+        aller à la Dashboard.
+      </p>
+
+      <!-- Bouton Login si pas connecté -->
       <NuxtLink
+        v-if="!user"
         to="/login"
         class="inline-block px-6 py-3 rounded-lg font-bold text-white transition-all duration-300 hover:scale-105"
         :style="{ backgroundColor: '#FF1493' }"
       >
         Aller à la connexion
+      </NuxtLink>
+
+      <!-- Bouton Dashboard si connecté -->
+      <NuxtLink
+        v-else
+        to="/dashboard"
+        class="inline-block px-6 py-3 rounded-lg font-bold text-white transition-all duration-300 hover:scale-105"
+        :style="{ backgroundColor: '#FF1493' }"
+      >
+        Aller à la Dashboard
       </NuxtLink>
     </div>
   </div>
