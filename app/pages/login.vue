@@ -48,7 +48,7 @@ async function signUp() {
       email: email.value,
       password: password.value,
       options: {
-        emailRedirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/email-confirmation?email=${email.value}`,
+        emailRedirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/email-verified?email=${email.value}`,
       },
     });
     console.log("✅ SignUp result:", {

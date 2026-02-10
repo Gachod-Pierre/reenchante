@@ -69,7 +69,6 @@ onMounted(async () => {
     console.log("📡 Setting up Realtime listener for email:", email);
 
     let confirmed = false;
-    let pollTimeout: NodeJS.Timeout | null = null;
 
     const realtimeListener = supabase
       .channel("profiles")
@@ -97,8 +96,6 @@ onMounted(async () => {
               localStorage.removeItem("pending_email");
             }
             realtimeListener.unsubscribe();
-            // Arrête le polling aussi
-            if (pollTimeout) clearTimeout(pollTimeout);
           }
         },
       )
@@ -108,39 +105,12 @@ onMounted(async () => {
           console.log(
             "✅ Realtime listener active - waiting for email confirmation!",
           );
-
-          // Polling de secours: vérifier toutes les 5s si l'email est confirmé
-          const pollInterval = setInterval(async () => {
-            try {
-              const { verified } = await $fetch("/api/check-email-verified", {
-                query: { email },
-              });
-
-              if (verified && !confirmed) {
-                console.log("✅ Email confirmed detected via polling!");
-                confirmed = true;
-                loading.value = false;
-                isVerified.value = true;
-                // Cleanup localStorage
-                if (typeof window !== "undefined") {
-                  localStorage.removeItem("pending_email");
-                }
-                clearInterval(pollInterval);
-                realtimeListener.unsubscribe();
-              }
-            } catch (err) {
-              console.error("❌ Polling error:", err);
-            }
-          }, 5000); // Polling toutes les 5s
-
-          pollTimeout = pollInterval as any;
         }
       });
 
     // Cleanup
     onBeforeUnmount(() => {
       realtimeListener.unsubscribe();
-      if (pollTimeout) clearTimeout(pollTimeout);
     });
   } else if (user.value) {
     // Si déjà connecté, montrer le template
