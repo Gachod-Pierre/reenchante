@@ -77,15 +77,11 @@ onMounted(async () => {
           schema: "public",
           table: "profiles",
         },
-        (payload: { new: { email: string; email_confirmed_at: string | null } }) => {
-          console.log(
-            "🔔 Profile update detected:",
-            payload.new.email,
-            payload.new.email_confirmed_at,
-          );
+        (payload: any) => {
+          console.log("🔔 Profile update detected - full payload:", payload);
 
-          // Vérifie que c'est bien le bon email
-          if (payload.new.email === email && payload.new.email_confirmed_at) {
+          // Check what's actually in the payload
+          if (payload.new.email_confirmed_at) {
             console.log("✅ Email confirmed detected via Realtime!");
             loading.value = false;
             isVerified.value = true;
