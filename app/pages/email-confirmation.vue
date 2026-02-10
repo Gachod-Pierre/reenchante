@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { RealtimeChannel } from "@supabase/supabase-js";
-
 definePageMeta({ ssr: false });
 
 const route = useRoute();
@@ -9,105 +7,159 @@ const loading = ref(true);
 const errorMsg = ref("");
 const isConnected = ref(false);
 
-let realtimeSubscription: RealtimeChannel | null = null;
-
-onBeforeUnmount(() => {
-  if (realtimeSubscription) {
-    realtimeSubscription.unsubscribe();
-  }
-});
-
 onMounted(async () => {
   const tokenHash = route.query.token_hash as string;
   const type = route.query.type as string;
 
-  console.log("📧 Email confirmation page mounted");
+  console.log("📧 Email confirmation page mounted", { tokenHash: !!tokenHash });
+
+  // Récupérer l'ID utilisateur depuis localStorage (stocké au moment du signup)
+  const pendingUserId = typeof window !== "undefined" 
+    ? localStorage.getItem("pending_verification_user_id")
+    : null;
+  
+  console.log("🔑 Pending user ID from localStorage:", pendingUserId || "none");
+
+  // Cleanup function (sera appelée à unmount)
+  onBeforeUnmount(() => {
+    console.log("🧹 Cleaning up subscriptions");
+  });
+
+  // Toujours setup l'écoute d'authentification AVANT de faire appels API
+  const { data: authData } = supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log("🔄 Auth state change:", event, "User:", session?.user?.email);
+    
+    if (session?.user?.id) {
+      console.log("✅ Session detected, showing verified template");
+      loading.value = false;
+      isConnected.value = true;
+      
+      // Cleanup auth subscription
+      authData?.subscription?.unsubscribe();
+      
+      // Cleanup localStorage
+      localStorage.removeItem("pending_verification_user_id");
+    }
+  });
 
   // Vérifier la session actuelle
   const { data: session } = await supabase.auth.getSession();
-  const currentUserId = session?.session?.user?.id;
-  console.log("🔍 Current session user:", currentUserId || "none");
+  console.log("🔍 Current session:", session?.session?.user?.email || "none");
 
-  // Si déjà connecté et email confirmé
-  if (currentUserId) {
-    console.log("✅ Already connected with verified email");
+  // Si déjà connecté
+  if (session?.session?.user?.id) {
+    console.log("✅ Already authenticated");
     loading.value = false;
     isConnected.value = true;
+    authData?.subscription?.unsubscribe();
+    localStorage.removeItem("pending_verification_user_id");
     return;
   }
 
-  // Si token présent, vérifier l'email
+  // Si token présent, vérifier l'email (quand on clique le lien depuis n'importe quel device)
   if (tokenHash && (type === "signup" || type === "email")) {
     console.log("🔐 Verifying OTP token...");
-    const { error, data } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type: "signup",
-    });
+    
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: "signup",
+      });
 
-    if (error) {
-      console.error("❌ Verification error:", error);
+      if (error) {
+        console.error("❌ OTP verification failed:", error.message);
+        loading.value = false;
+        errorMsg.value = error.message;
+        authData?.subscription?.unsubscribe();
+        return;
+      }
+
+      console.log("✅ OTP verified for:", data?.user?.email);
+      console.log("⏳ Waiting for session update via auth listener...");
+      
+      // 🔑 Important: On ne fait PAS de vérification manuelle après verifyOtp()
+      // Le onAuthStateChange va se déclencher automatiquement quand la session est prête
+      // Juste attendre que le listener se déclenche
+      
+      // Timeout de sécurité : si après 5 secondes rien ne s'est passé, montrer une erreur
+      const verificationTimeout = setTimeout(() => {
+        if (loading.value) {  // Si on attend toujours
+          console.warn("⚠️ Verification timeout - session not detected after 5s");
+          loading.value = false;
+          errorMsg.value = "Confirmation prenant trop de temps. Veuillez rafraîchir la page.";
+          authData?.subscription?.unsubscribe();
+        }
+      }, 5000);
+      
+      // Cleanup du timeout si la session arrive avant
+      const cleanupTimeout = () => clearTimeout(verificationTimeout);
+      
+      // On écoute les changements d'isConnected pour savoir quand on est connect
+      const checkConnection = watch(
+        () => isConnected.value,
+        (newValue) => {
+          if (newValue) {
+            console.log("✅ Connection successful via listener!");
+            cleanupTimeout();
+            checkConnection();  // Stop watching
+          }
+        }
+      );
+    } catch (err) {
+      const error = err as Error;
+      console.error("❌ OTP error:", error.message);
       loading.value = false;
       errorMsg.value = error.message;
+      authData?.subscription?.unsubscribe();
       return;
     }
-
-    console.log("✅ Email verified! User:", data?.user?.email);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    loading.value = false;
-    isConnected.value = true;
-    return;
+    
+    // ⚠️ Important: On ne fait PAS return ici!
+    // Le listener reste actif et va mettre isConnected = true quand la session arrive
+    // Ce return permet à la fonction de continuer et le listener reste acti
   }
 
-  // Écouter les changements d'authentification
-  console.log("📡 Listening for auth state changes...");
-  const { data } = supabase.auth.onAuthStateChange((event, newSession) => {
-    console.log("🔄 Auth state change:", event, newSession?.user?.email);
-
-    if (event === "SIGNED_IN" && newSession?.user) {
-      console.log("✅ User signed in:", newSession.user.email);
-      loading.value = false;
-      isConnected.value = true;
-      if (realtimeSubscription) {
-        realtimeSubscription.unsubscribe();
-      }
-    }
-  });
-
-  // Cleanup
-  onBeforeUnmount(() => {
-    data?.subscription?.unsubscribe();
-    if (realtimeSubscription) {
-      realtimeSubscription.unsubscribe();
-    }
-  });
-
-  // Setup Realtime pour les changements cross-device
-  if (currentUserId) {
-    console.log("📡 Setting Realtime listener for cross-device detection");
-    realtimeSubscription = supabase
-      .channel(`profiles-${currentUserId}`)
+  // 🔥 NOUVELLE LOGIQUE: Si pas de token mais on a l'ID depuis localStorage
+  // Cela permet de détecter la confirmation depuis un AUTRE DEVICE
+  if (pendingUserId && !tokenHash) {
+    console.log("📡 Setting up Realtime listener for cross-device confirmation with userId:", pendingUserId);
+    
+    const realtimeSubscription = supabase
+      .channel(`profile-update-${pendingUserId}`)
       .on(
         "postgres_changes",
         {
           event: "UPDATE",
           schema: "public",
           table: "profiles",
-          filter: `id=eq.${currentUserId}`,
+          filter: `id=eq.${pendingUserId}`,
         },
         (payload: { new: { email_verified_at: string | null } }) => {
-          console.log("🔔 Profile updated:", payload);
+          console.log("🔔 Profile update detected:", payload.new.email_verified_at);
+          
           if (payload.new.email_verified_at) {
-            console.log("✅ Email verified from other device!");
-            isConnected.value = true;
+            console.log("✅ Email verified from OTHER device!");
             loading.value = false;
+            isConnected.value = true;
+            
+            // Cleanup
+            realtimeSubscription.unsubscribe();
+            authData?.subscription?.unsubscribe();
+            localStorage.removeItem("pending_verification_user_id");
           }
         },
       )
       .subscribe((status) => {
-        console.log("📡 Realtime status:", status);
+        console.log("📡 Realtime subscription status:", status);
+        if (status === "SUBSCRIBED") {
+          console.log("✅ Realtime listener active - waiting for email confirmation!");
+        }
       });
+  } else {
+    console.log("📡 Waiting for authentication from any device...");
   }
 });
+
 
 const pageStyle = {
   width: "100%",

@@ -44,7 +44,7 @@ async function signUp() {
   errorMsg.value = "";
   loading.value = true;
   try {
-    const { error } = await supabase.auth.signUp({
+    const { error, data } = await supabase.auth.signUp({
       email: email.value,
       password: password.value,
       options: {
@@ -53,12 +53,16 @@ async function signUp() {
     });
     console.log("✅ SignUp result:", {
       error,
-      currentUser: user.value?.email || "no user",
+      userId: data?.user?.id,
+      email: data?.user?.email,
     });
     if (error) {
       errorMsg.value = error.message;
       loading.value = false;
-    } else {
+    } else if (data?.user?.id) {
+      // 🔑 Stocker l'ID utilisateur pour pouvoir vérifier l'email confirmation cross-device
+      localStorage.setItem("pending_verification_user_id", data.user.id);
+      console.log("💾 Stored pending user ID:", data.user.id);
       console.log("🎯 Navigating to /email-confirmation");
       await navigateTo("/email-confirmation");
     }
