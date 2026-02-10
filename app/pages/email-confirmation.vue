@@ -137,7 +137,7 @@ onMounted(async () => {
           localStorage.removeItem("pending_email");
         }
       }
-    }
+    },
   );
 });
 
@@ -188,8 +188,8 @@ const pageStyle = {
         </p>
         <p class="text-lg text-gray-700 mb-6">
           Nous avons envoyé un lien de confirmation à votre adresse email.
-          <br>
-          <br>
+          <br />
+          <br />
           Cliquez sur le lien pour confirmer votre compte et commencer à
           réenchanter le monde ! ✨
         </p>
