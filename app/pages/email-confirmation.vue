@@ -76,15 +76,16 @@ onMounted(async () => {
           event: "UPDATE",
           schema: "public",
           table: "profiles",
-          filter: `email=eq.${email}`,
         },
-        (payload: { new: { email_confirmed_at: string | null } }) => {
+        (payload: { new: { email: string; email_confirmed_at: string | null } }) => {
           console.log(
             "🔔 Profile update detected:",
+            payload.new.email,
             payload.new.email_confirmed_at,
           );
 
-          if (payload.new.email_confirmed_at) {
+          // Vérifie que c'est bien le bon email
+          if (payload.new.email === email && payload.new.email_confirmed_at) {
             console.log("✅ Email confirmed detected via Realtime!");
             loading.value = false;
             isVerified.value = true;
