@@ -7,6 +7,7 @@ const user = useSupabaseUser();
 const loading = ref(true);
 const errorMsg = ref("");
 const isConnected = ref(false);
+const isVerified = ref(false);
 
 onMounted(async () => {
   const tokenHash = route.query.token_hash as string;
@@ -33,10 +34,21 @@ onMounted(async () => {
       return;
     } else {
       console.log("✅ Email verified!");
+      loading.value = false;
+      
+      // Vérifier si utilisateur est connecté après verifyOtp
+      if (user.value) {
+        console.log("✅ Same device - User connected:", user.value.email);
+        isConnected.value = true;
+      } else {
+        console.log("📱 Cross-device - Email verified but not connected");
+        isVerified.value = true;
+      }
+      return;
     }
   }
 
-  // Après vérification (ou si pas de token), vérifier la connexion
+  // Si pas de token mais déjà connecté
   if (user.value) {
     console.log("👤 User already connected:", user.value.email);
     loading.value = false;
@@ -44,7 +56,7 @@ onMounted(async () => {
     return;
   }
 
-  // Sinon attendre la connexion
+  // Sinon attendre la connexion (cas rare: token absent et pas d'utilisateur)
   console.log("⏳ Waiting for user connection...");
   const unwatch = watch(user, (newUser) => {
     if (newUser) {
@@ -128,6 +140,27 @@ const pageStyle = {
           :style="{ backgroundColor: '#FF1493' }"
         >
           Aller à la Dashboard
+        </NuxtLink>
+      </div>
+
+      <!-- Email vérifié (audit-device) - bouton se connecter -->
+      <div v-else-if="isVerified && !isConnected" class="mb-8">
+        <p class="text-4xl md:text-5xl mb-6">✅</p>
+        <p
+          class="text-2xl md:text-3xl font-bold mb-4"
+          :style="{ color: '#FF1493' }"
+        >
+          Email vérifié !
+        </p>
+        <p class="text-lg text-gray-700 mb-6">
+          Votre email a été confirmé avec succès. Connectez-vous pour accéder à votre dashboard.
+        </p>
+        <NuxtLink
+          to="/login"
+          class="inline-block px-6 py-3 rounded-lg font-bold text-white transition-all duration-300 hover:scale-105"
+          :style="{ backgroundColor: '#FF1493' }"
+        >
+          Se connecter
         </NuxtLink>
       </div>
     </div>
