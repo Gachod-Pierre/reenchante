@@ -12,17 +12,23 @@ const isVerified = ref(false);
 onMounted(async () => {
   const tokenHash = route.query.token_hash as string;
   const type = route.query.type as string;
+  let email = route.query.email as string;
+
+  // Si pas d'email en paramètre, récupère depuis localStorage
+  if (!email && typeof window !== "undefined") {
+    email = localStorage.getItem("pending_email") || "";
+  }
 
   console.log("📧 Email confirmation page mounted:", {
     tokenHash: !!tokenHash,
     type,
+    email,
     isUserConnected: !!user.value,
-    allQueryParams: route.query,
   });
 
   // Si token présent, vérifier l'email d'abord
   if (tokenHash && (type === "email" || type === "signup")) {
-    console.log("🔐 Verifying OTP token...", { tokenHash, type });
+    console.log("🔐 Verifying OTP token...", { tokenHash, type, email });
     const { error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type: (type as "email" | "signup") || "email",
@@ -35,10 +41,10 @@ onMounted(async () => {
       return;
     } else {
       console.log("✅ Email verified!");
-      
+
       // Attendre que user.value se mette à jour après verifyOtp
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       console.log("✅ After verifyOtp - user.value:", user.value?.email);
       loading.value = false;
 
@@ -46,32 +52,93 @@ onMounted(async () => {
       if (user.value) {
         console.log("✅ Same device - User connected:", user.value.email);
         isConnected.value = true;
+        // Nettoie localStorage s'il existe
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("pending_email");
+        }
+        return;
       } else {
         console.log("📱 Cross-device - Email verified but not connected");
-        isVerified.value = true;
+        // Continue to realtime listener below
       }
-      return;
     }
   }
 
-  // Si pas de token mais déjà connecté
-  if (user.value) {
-    console.log("👤 User already connected:", user.value.email);
+  // Si pas connecté, écouter en Realtime les modifications du profile
+  if (!user.value && email) {
+    console.log("📡 Setting up Realtime listener for email:", email);
+
+    const realtimeListener = supabase
+      .channel("profiles")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `email=eq.${email}`,
+        },
+        (payload: { new: { email_confirmed_at: string | null } }) => {
+          console.log(
+            "🔔 Profile update detected:",
+            payload.new.email_confirmed_at,
+          );
+
+          if (payload.new.email_confirmed_at) {
+            console.log("✅ Email confirmed detected via Realtime!");
+            loading.value = false;
+            isVerified.value = true;
+            // Cleanup localStorage
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("pending_email");
+            }
+            realtimeListener.unsubscribe();
+          }
+        },
+      )
+      .subscribe((status) => {
+        console.log("📡 Realtime subscription status:", status);
+        if (status === "SUBSCRIBED") {
+          console.log(
+            "✅ Realtime listener active - waiting for email confirmation!",
+          );
+          // On garde loading = true en attente de la confirmation
+        }
+      });
+
+    // Cleanup
+    onBeforeUnmount(() => {
+      realtimeListener.unsubscribe();
+    });
+  } else if (user.value) {
+    // Si déjà connecté, montrer le template
     loading.value = false;
     isConnected.value = true;
-    return;
+    // Nettoie localStorage s'il existe
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("pending_email");
+    }
+  } else if (!email) {
+    // Pas d'email et pas de user = problème
+    console.error("❌ No email found");
+    loading.value = false;
+    errorMsg.value = "Email non trouvé. Veuillez vous inscrire à nouveau.";
   }
 
-  // Sinon attendre la connexion (cas rare: token absent et pas d'utilisateur)
-  console.log("⏳ Waiting for user connection...");
-  const unwatch = watch(user, (newUser) => {
-    if (newUser) {
-      console.log("👤 User connected:", newUser.email);
-      loading.value = false;
-      isConnected.value = true;
-      unwatch();
+  // Watcher pour détecter quand l'utilisateur se connecte après le mount
+  watch(
+    () => user.value,
+    (newUser) => {
+      if (newUser && !isConnected.value) {
+        console.log("👤 User connected after mount:", newUser.email);
+        loading.value = false;
+        isConnected.value = true;
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("pending_email");
+        }
+      }
     }
-  });
+  );
 });
 
 const pageStyle = {
@@ -121,8 +188,8 @@ const pageStyle = {
         </p>
         <p class="text-lg text-gray-700 mb-6">
           Nous avons envoyé un lien de confirmation à votre adresse email.
-          <br />
-          <br />
+          <br>
+          <br>
           Cliquez sur le lien pour confirmer votre compte et commencer à
           réenchanter le monde ! ✨
         </p>
