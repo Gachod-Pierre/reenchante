@@ -44,15 +44,23 @@ onMounted(async () => {
     return;
   }
 
-  // Sinon attendre la connexion
+  // Écouter les changements de session en temps réel (fonctionne même si confirmé depuis un autre appareil)
   console.log("⏳ Waiting for user connection...");
-  const unwatch = watch(user, (newUser) => {
-    if (newUser) {
-      console.log("👤 User connected:", newUser.email);
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((event, session) => {
+    console.log("🔄 Auth state changed:", event, !!session?.user);
+    if (session?.user) {
+      console.log("👤 User connected via auth change:", session.user.email);
       loading.value = false;
       isConnected.value = true;
-      unwatch();
+      subscription?.unsubscribe();
     }
+  });
+
+  // Cleanup subscription quand le composant est démonté
+  onBeforeUnmount(() => {
+    subscription?.unsubscribe();
   });
 });
 
