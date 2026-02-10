@@ -251,8 +251,7 @@ const pageStyle = {
               class="space-y-3 flex flex-col pt-5 items-center md:max-w-sm md:mx-auto"
             >
               <button
-                class="w-full md:w-full px-6 py-3 rounded-lg font-bold text-white  disabled:opacity-50 disabled:cursor-not-allowed bg-[#FF1493]
-transition-all duration-300 hover:shadow-lg hover:scale-105 hover:bg-[#D9187F]"
+                class="w-full md:w-full px-6 py-3 rounded-lg font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed bg-[#FF1493] transition-all duration-300 hover:shadow-lg hover:scale-105 hover:bg-[#D9187F]"
                 :disabled="loading"
                 @click="isSignUp ? signUp() : signIn()"
               >
@@ -266,11 +265,10 @@ transition-all duration-300 hover:shadow-lg hover:scale-105 hover:bg-[#D9187F]"
               </button>
 
               <button
-                class="w-full md:w-full px-6 py-3 rounded-lg font-bold border-2 flex items-center justify-center gap-3
-transition-all duration-300 hover:shadow-lg hover:scale-105 bg-[#ff69b40d] hover:bg-[#ff69b432]"
+                class="w-full md:w-full px-6 py-3 rounded-lg font-bold border-2 flex items-center justify-center gap-3 transition-all duration-300 hover:shadow-lg hover:scale-105 bg-[#ff69b40d] hover:bg-[#ff69b432]"
                 :style="{
                   borderColor: '#FF69B4',
-                  color: '#FF1493'
+                  color: '#FF1493',
                 }"
                 @click="signInWithGoogle"
               >

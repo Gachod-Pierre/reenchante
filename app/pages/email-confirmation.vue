@@ -110,14 +110,17 @@ const pageStyle = {
           Vérifiez votre email !
         </p>
         <p class="text-lg text-gray-700 mb-6">
-          Nous avons envoyé un lien de confirmation à votre adresse email, si vous ne voyez rien vérifiez vos spams ! 😉
+          Nous avons envoyé un lien de confirmation à votre adresse email, si
+          vous ne voyez rien vérifiez vos spams ! 😉
           <br >
           <br >
           Cliquez sur le lien pour confirmer votre compte et commencer à
           réenchanter le monde ! ✨
           <br >
           <br >
-          Si vous n'avez rien reçu, un compte existe déjà avec cette adresse email, essayez de vous connecter directement ou réinitialisez votre mot de passe.
+          Si vous n'avez rien reçu, un compte existe déjà avec cette adresse
+          email, essayez de vous connecter directement ou réinitialisez votre
+          mot de passe.
         </p>
       </div>
 
