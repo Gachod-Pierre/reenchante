@@ -78,10 +78,10 @@ onMounted(async () => {
           table: "profiles",
         },
         (payload: any) => {
-          console.log("🔔 Profile update detected - full payload:", payload);
+          console.log("🔔 Profile update detected - email_verified_at:", payload.new.email_verified_at);
 
-          // Check what's actually in the payload
-          if (payload.new.email_confirmed_at) {
+          // Si email_verified_at n'est pas null, l'email a été confirmé
+          if (payload.new.email_verified_at) {
             console.log("✅ Email confirmed detected via Realtime!");
             loading.value = false;
             isVerified.value = true;
