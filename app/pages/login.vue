@@ -12,8 +12,6 @@ const planetOffset = ref(0);
 
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
-const router = useRouter();
-const config = useRuntimeConfig();
 
 onMounted(() => {
   window.addEventListener("scroll", handleParallax);
@@ -33,15 +31,10 @@ const handleParallax = () => {
 };
 
 async function signInWithGoogle() {
-  const siteUrl =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : config.public.siteUrl;
-
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${siteUrl}/confirm`,
+      redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/confirm`,
     },
   });
   if (error) errorMsg.value = error.message;
@@ -51,19 +44,11 @@ async function signUp() {
   errorMsg.value = "";
   loading.value = true;
   try {
-    // Construire l'URL de redirection correctement
-    const siteUrl =
-      typeof window !== "undefined"
-        ? window.location.origin
-        : config.public.siteUrl;
-
     const { error } = await supabase.auth.signUp({
       email: email.value,
       password: password.value,
       options: {
-        emailRedirectTo: `${siteUrl}/email-verified`,
-        // Désactiver PKCE pour forcer OTP flow - meilleur pour cross-device
-        shouldCreateUser: true,
+        emailRedirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/email-verified?email=${email.value}`,
       },
     });
     console.log("✅ SignUp result:", {
