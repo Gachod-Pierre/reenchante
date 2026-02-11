@@ -230,6 +230,15 @@ const pageStyle = {
                     borderColor: '#FF69B4',
                   }"
                 />
+                <div v-if="!isSignUp" class="mt-2">
+                  <NuxtLink
+                    to="/forgot-password"
+                    class="text-sm font-semibold transition-all duration-300 hover:underline"
+                    :style="{ color: '#FF1493' }"
+                  >
+                    Mot de passe oublié ?
+                  </NuxtLink>
+                </div>
               </div>
             </div>
 
