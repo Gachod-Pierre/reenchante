@@ -62,6 +62,8 @@ async function signUp() {
       password: password.value,
       options: {
         emailRedirectTo: `${siteUrl}/email-verified`,
+        // Désactiver PKCE pour forcer OTP flow - meilleur pour cross-device
+        shouldCreateUser: true,
       },
     });
     console.log("✅ SignUp result:", {
