@@ -33,8 +33,11 @@ const handleParallax = () => {
 };
 
 async function signInWithGoogle() {
-  const siteUrl = typeof window !== "undefined" ? window.location.origin : config.public.siteUrl;
-  
+  const siteUrl =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : config.public.siteUrl;
+
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
@@ -49,8 +52,11 @@ async function signUp() {
   loading.value = true;
   try {
     // Construire l'URL de redirection correctement
-    const siteUrl = typeof window !== "undefined" ? window.location.origin : config.public.siteUrl;
-    
+    const siteUrl =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : config.public.siteUrl;
+
     const { error } = await supabase.auth.signUp({
       email: email.value,
       password: password.value,
