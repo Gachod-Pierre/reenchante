@@ -18,17 +18,35 @@ const pageStyle = {
 
 onMounted(async () => {
   const tokenHash = route.query.token_hash as string;
+  const code = route.query.code as string;
   const type = route.query.type as string;
 
   console.log("📧 Email verified page mounted:", {
     tokenHash: !!tokenHash,
+    code: !!code,
     type,
     isUserConnected: !!user.value,
   });
 
-  // Si token présent, vérifier l'email et créer la session
-  if (tokenHash && (type === "email" || type === "signup")) {
-    console.log("🔐 Verifying OTP token...", { tokenHash, type });
+  // Cas 1: PKCE flow (code présent)
+  if (code) {
+    console.log("🔐 PKCE Flow: Exchanging code for session...", { code });
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (error) {
+      console.error("❌ PKCE exchange error:", error);
+      errorMsg.value = error.message;
+      loading.value = false;
+      return;
+    }
+
+    console.log("✅ Session created from PKCE code!");
+    // Attendre que user.value se mette à jour
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  // Cas 2: OTP flow (token_hash présent)
+  else if (tokenHash && (type === "email" || type === "signup")) {
+    console.log("🔐 OTP Flow: Verifying OTP token...", { tokenHash, type });
     const { data, error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type: (type as "email" | "signup") || "email",
