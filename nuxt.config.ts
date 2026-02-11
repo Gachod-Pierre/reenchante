@@ -7,23 +7,15 @@ export default defineNuxtConfig({
     "@nuxt/eslint",
     "@nuxt/icon",
     "@nuxt/image",
-    "@nuxtjs/supabase",
     "@nuxtjs/tailwindcss",
     "@tresjs/nuxt",
     "@netlify/nuxt",
   ],
-  supabase: {
-    redirectOptions: {
-      login: "/login",
-      callback: "/confirm",
-      exclude: [
-        "/",
-        "/gallery",
-        "/email-confirmation",
-        "/email-verified",
-        "/forgot-password",
-        "/reset-password",
-      ],
+  runtimeConfig: {
+    public: {
+      supabaseUrl: process.env.SUPABASE_URL,
+      supabaseKey: process.env.SUPABASE_KEY,
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL,
     },
   },
 });
