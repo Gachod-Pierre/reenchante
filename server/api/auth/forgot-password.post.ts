@@ -24,9 +24,12 @@ export default defineEventHandler(async (event) => {
     console.log(
       "🔐 Sending reset password email via resetPasswordForEmail()...",
     );
-    const { data: _, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NUXT_PUBLIC_SITE_URL || "http://localhost:3000"}/reset-password`,
-    });
+    const { data: _, error } = await supabase.auth.resetPasswordForEmail(
+      email,
+      {
+        redirectTo: `${process.env.NUXT_PUBLIC_SITE_URL || "http://localhost:3000"}/reset-password`,
+      },
+    );
 
     if (error) {
       console.error("❌ resetPasswordForEmail error:", error);
@@ -41,7 +44,10 @@ export default defineEventHandler(async (event) => {
     return { success: true, message: "Email de réinitialisation envoyé" };
   } catch (err: unknown) {
     console.error("❌ API error:", err);
-    const error = err as { message?: string; data?: { statusMessage?: string } };
+    const error = err as {
+      message?: string;
+      data?: { statusMessage?: string };
+    };
     const message =
       error?.message ||
       error?.data?.statusMessage ||

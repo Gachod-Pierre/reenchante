@@ -185,7 +185,7 @@ const pageStyle = {
               placeholder="••••••••"
               required
               class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-pink-500"
-            >
+            />
           </div>
 
           <!-- Confirm password -->
@@ -199,7 +199,7 @@ const pageStyle = {
               placeholder="••••••••"
               required
               class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-pink-500"
-            >
+            />
           </div>
 
           <!-- Erreur -->
