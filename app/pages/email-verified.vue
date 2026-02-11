@@ -29,7 +29,7 @@ onMounted(async () => {
   // Si token présent, vérifier l'email et créer la session
   if (tokenHash && (type === "email" || type === "signup")) {
     console.log("🔐 Verifying OTP token...", { tokenHash, type });
-    const { error } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type: (type as "email" | "signup") || "email",
     });
@@ -41,7 +41,14 @@ onMounted(async () => {
       return;
     }
 
-    console.log("✅ Email verified and session created!");
+    console.log("✅ Email verified!");
+
+    // S'assurer que la session est créée (importante pour cross-device)
+    if (data.session) {
+      console.log("📝 Setting session with tokens from verifyOtp response");
+      await supabase.auth.setSession(data.session);
+    }
+
     // Attendre que user.value se mette à jour après verifyOtp
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
