@@ -12,6 +12,8 @@ const planetOffset = ref(0);
 
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
+const router = useRouter();
+const config = useRuntimeConfig();
 
 onMounted(() => {
   window.addEventListener("scroll", handleParallax);
@@ -34,7 +36,7 @@ async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/confirm`,
+      redirectTo: `${config.public.siteUrl}/confirm`,
     },
   });
   if (error) errorMsg.value = error.message;
@@ -48,7 +50,7 @@ async function signUp() {
       email: email.value,
       password: password.value,
       options: {
-        emailRedirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/email-verified?email=${email.value}`,
+        emailRedirectTo: `${config.public.siteUrl}/email-verified`,
       },
     });
     console.log("✅ SignUp result:", {
